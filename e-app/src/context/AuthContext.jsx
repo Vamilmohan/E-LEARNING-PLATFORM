@@ -6,38 +6,55 @@ const AuthContext = createContext();
 export function AuthProvider({ children }) {
   const [state, dispatch] = useReducer(authReducer, initialAuthState, () => {
     const savedAuth = localStorage.getItem("APP_AUTH");
-    const savedUsers = localStorage.getItem("APP_USERS");
-    const auth = savedAuth ? JSON.parse(savedAuth) : { isAuthenticated: false, user: null, error: null };
-    const users = savedUsers ? JSON.parse(savedUsers) : [];
-    return { ...auth, users };
+    const auth = savedAuth ? JSON.parse(savedAuth) : { isAuthenticated: false, user: null, token: null, error: null };
+    return auth;
   });
 
   useEffect(() => {
     localStorage.setItem("APP_AUTH", JSON.stringify({
       isAuthenticated: state.isAuthenticated,
       user: state.user,
-      error: state.error
+      error: state.error,
+      token: state.token,
     }));
-    localStorage.setItem("APP_USERS", JSON.stringify(state.users));
   }, [state]);
 
-  const signup = (data) => {
-    const existingUser = state.users.find(u => u.email === data.email);
-    if (existingUser) {
-      dispatch({ type: "SET_ERROR", payload: "Email already exists" });
+  const signup = async (data) => {
+    try {
+      const res = await fetch(`${import.meta.env.VITE_API_URL || "http://localhost:4000"}/api/auth/signup`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      const body = await res.json();
+      if (!res.ok) {
+        dispatch({ type: "SET_ERROR", payload: body.error || "Signup failed" });
+        return false;
+      }
+      dispatch({ type: "SIGNUP", payload: { user: body.user, token: body.token } });
+      return true;
+    } catch (err) {
+      dispatch({ type: "SET_ERROR", payload: "Signup failed" });
       return false;
     }
-    dispatch({ type: "SIGNUP", payload: data });
-    return true;
   };
 
-  const login = (data) => {
-    const user = state.users.find(u => u.email === data.email && u.password === data.password);
-    if (user) {
-      dispatch({ type: "LOGIN", payload: user });
+  const login = async (data) => {
+    try {
+      const res = await fetch(`${import.meta.env.VITE_API_URL || "http://localhost:4000"}/api/auth/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      const body = await res.json();
+      if (!res.ok) {
+        dispatch({ type: "SET_ERROR", payload: body.error || "Invalid email or password" });
+        return false;
+      }
+      dispatch({ type: "LOGIN", payload: { user: body.user, token: body.token } });
       return true;
-    } else {
-      dispatch({ type: "SET_ERROR", payload: "Invalid email or password" });
+    } catch (err) {
+      dispatch({ type: "SET_ERROR", payload: "Login failed" });
       return false;
     }
   };
@@ -47,11 +64,13 @@ export function AuthProvider({ children }) {
   };
 
   const updateUser = (userId, updates) => {
-    dispatch({ type: "UPDATE_USER", payload: { userId, updates } });
+    // TODO: implement backend update endpoint when ready
+    dispatch({ type: "SET_ERROR", payload: "Update user not implemented" });
   };
 
   const removeUser = (userId) => {
-    dispatch({ type: "REMOVE_USER", payload: userId });
+    // TODO: implement backend delete endpoint when ready
+    dispatch({ type: "SET_ERROR", payload: "Remove user not implemented" });
   };
 
   return (

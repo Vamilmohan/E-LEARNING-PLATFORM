@@ -1,7 +1,7 @@
 export const initialAuthState = {
   isAuthenticated: false,
   user: null,
-  users: [],
+  token: null,
   error: null,
 };
 
@@ -10,9 +10,9 @@ export function authReducer(state, action) {
     case "SIGNUP":
       return {
         ...state,
-        users: [...state.users, action.payload],
         isAuthenticated: true,
-        user: action.payload,
+        user: action.payload.user,
+        token: action.payload.token,
         error: null,
       };
 
@@ -20,27 +20,19 @@ export function authReducer(state, action) {
       return {
         ...state,
         isAuthenticated: true,
-        user: action.payload,
+        user: action.payload.user,
+        token: action.payload.token,
         error: null,
       };
 
     case "LOGOUT":
-      return { ...state, isAuthenticated: false, user: null, error: null };
+      return { ...state, isAuthenticated: false, user: null, token: null, error: null };
 
     case "SET_ERROR":
       return { ...state, error: action.payload };
 
-    case "UPDATE_USER":
-      return {
-        ...state,
-        users: state.users.map(u => u.id === action.payload.userId ? { ...u, ...action.payload.updates } : u)
-      };
-
-    case "REMOVE_USER":
-      return {
-        ...state,
-        users: state.users.filter(u => u.id !== action.payload)
-      };
+    case "SET_ERROR":
+      return { ...state, error: action.payload };
 
     default:
       return state;

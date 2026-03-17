@@ -9,9 +9,11 @@ export default function LoginForm() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (login(form)) {
-      navigate(`/dashboard/${user.role}`);
-    }
+    login(form).then((success) => {
+      if (success) {
+        navigate(`/dashboard/${user.role}`);
+      }
+    });
   };
 
   return (
@@ -19,15 +21,21 @@ export default function LoginForm() {
       <h3>Login</h3>
       {error && <div className="alert alert-danger">{error}</div>}
 
-      <input className="form-control mt-2" placeholder="Email"
-        type="email"
-        value={form.email}
-        onChange={(e) => setForm({ ...form, email: e.target.value })} required />
+      <div className="input-group mb-2">
+        <span className="input-group-text"><i className="bi bi-envelope"></i></span>
+        <input className="form-control" placeholder="Email"
+          type="email"
+          value={form.email}
+          onChange={(e) => setForm({ ...form, email: e.target.value })} required />
+      </div>
 
-      <input className="form-control mt-2" placeholder="Password"
-        type="password"
-        value={form.password}
-        onChange={(e) => setForm({ ...form, password: e.target.value })} required />
+      <div className="input-group mb-2">
+        <span className="input-group-text"><i className="bi bi-lock"></i></span>
+        <input className="form-control" placeholder="Password"
+          type="password"
+          value={form.password}
+          onChange={(e) => setForm({ ...form, password: e.target.value })} required />
+      </div>
 
       <button className="btn btn-success mt-3 w-100">Login</button>
     </form>

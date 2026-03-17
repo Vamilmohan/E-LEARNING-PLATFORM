@@ -24,8 +24,7 @@ a:hover {
 
 body {
   margin: 0;
-  display: flex;
-  place-items: center;
+  display: block;
   min-width: 320px;
   min-height: 100vh;
 }
@@ -65,4 +64,52 @@ button:focus-visible {
   button {
     background-color: #f9f9f9;
   }
+}
+
+/* Carousel custom styles */
+.carousel-control-prev-icon,
+.carousel-control-next-icon {
+  width: 1.5rem !important;
+  height: 1.5rem !important;
+  background-size: 1.5rem 1.5rem !important;
+}
+
+.carousel-control-prev,
+.carousel-control-next {
+  width: 2.8rem !important;
+  height: 2.8rem !important;
+  border-radius: 50% !important;
+  background: rgba(0, 0, 0, 0.35) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  opacity: 0.95 !important;
+  z-index: 10 !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+}
+
+/* Only force text to white for the hero carousel (so feature carousel can show dark text on light backgrounds) */
+#heroCarousel .carousel-item h1,
+#heroCarousel .carousel-item p,
+#heroCarousel .carousel-item ul,
+#heroCarousel .carousel-item li {
+  color: white !important;
+  text-shadow: 2px 2px 4px rgba(0,0,0,0.6) !important;
+}
+
+/* Ensure the hero carousel fills the viewport */
+#heroCarousel,
+#heroCarousel .carousel-inner,
+#heroCarousel .carousel-item {
+  height: 75vh !important;
+  min-height: 75vh !important;
+}
+
+/* Ensure the features carousel has consistent height and full width */
+#featuresCarousel,
+#featuresCarousel .carousel-inner,
+#featuresCarousel .carousel-item {
+  height: 60vh !important;
+  min-height: 60vh !important;
 }
