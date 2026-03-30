@@ -1,6 +1,6 @@
 import React,{useState} from "react";
 
-export default function CoursePlayer({course,onBack}){
+export default function CoursePlayer({course,onBack,onEnroll,isEnrolled}){
     const [currentVideo,setCurrentVideo]=useState(course.content?.[0] ||null);
 
     const getEmbedUrl=(url)=>{
@@ -35,6 +35,25 @@ export default function CoursePlayer({course,onBack}){
           </div>
           <h3 className="mt-4 fw-bold">{course.title}</h3>
           <p className="text-secondary">{course.description}</p>
+          <div className="mt-4">
+            {isEnrolled ? (
+              <button className="btn btn-success btn-lg w-100" disabled>
+                <i className="bi bi-check-circle me-2"></i>Enrolled
+              </button>
+            ) : (
+              <button 
+                className="btn btn-primary btn-lg w-100"
+                onClick={() => {
+                  if (onEnroll) {
+                    onEnroll(course.id);
+                    alert('Successfully enrolled in ' + course.title);
+                  }
+                }}
+              >
+                <i className="bi bi-person-plus me-2"></i>Enroll Now
+              </button>
+            )}
+          </div>
         </div>
 
         {/* RIGHT: The Content List (Playlist) */}

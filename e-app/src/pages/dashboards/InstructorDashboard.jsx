@@ -6,6 +6,8 @@ import InstructorProfile from "../InstructorProfile";
 import CourseForm from "../../components/courses/CourseForm"; 
 import CourseCard from "../../components/courses/CourseCard";
 import CoursePlayer from "../../components/courses/CoursePlayer";
+import QuizManagement from "../../components/quizzes/QuizManagement";
+import ErrorBoundary from "../../components/ErrorBoundary";
 export default function InstructorDashboard() {
   const { user, logout } = useAuth();
   const [activeTab, setActiveTab] = useState("dashboard");
@@ -16,6 +18,7 @@ export default function InstructorDashboard() {
   const [quizzes, setQuizzes] = useState(() => JSON.parse(localStorage.getItem("APP_QUIZZES") || "[]"));
   const [complaints, setComplaints] = useState(() => JSON.parse(localStorage.getItem("APP_COMPLAINTS") || "[]"));
   const [selectedCourse,setSelectedCourse]=useState(null);
+  const [quizAttempts, setQuizAttempts] = useState(() => JSON.parse(localStorage.getItem("APP_QUIZ_ATTEMPTS") || "[]"));
 
   useEffect(() => {
     localStorage.setItem("APP_COURSES", JSON.stringify(courses));
@@ -33,9 +36,9 @@ export default function InstructorDashboard() {
     localStorage.setItem("APP_COMPLAINTS", JSON.stringify(complaints));
   }, [complaints]);
 
-  const myCourses = courses.filter(c => c.instructorId === user.id);
-  const myEnrollments = enrollments.filter(e => myCourses.some(c => c.id === e.courseId));
-  const myQuizzes = quizzes.filter(q => myCourses.some(c => c.id === q.courseId));
+  const myCourses = (courses || []).filter(c => c.instructorId === user.id);
+  const myEnrollments = (enrollments || []).filter(e => (myCourses || []).some(c => c.id === e.courseId));
+  const myQuizzes = (quizzes || []).filter(q => (myCourses || []).some(c => c.id === q.courseId));
 
   // --- UPDATED ADD COURSE LOGIC ---
   const addCourse = (courseData) => {
@@ -52,7 +55,32 @@ export default function InstructorDashboard() {
   };
 
   const addQuiz = (quiz) => {
-    setQuizzes([...quizzes, { ...quiz, id: Date.now() }]);
+    const newQuiz = {
+      ...quiz,
+      id: Date.now().toString(),
+      published: false
+    };
+    setQuizzes([...quizzes, newQuiz]);
+  };
+
+  const updateQuiz = (quizId, updatedQuiz) => {
+    setQuizzes(quizzes.map(q => q.id === quizId ? { ...q, ...updatedQuiz } : q));
+  };
+
+  const publishQuiz = (quizId, publishData) => {
+    setQuizzes(quizzes.map(q =>
+      q.id === quizId
+        ? { ...q, ...publishData }
+        : q
+    ));
+  };
+
+  const extendDeadline = (quizId, newDeadline) => {
+    setQuizzes(quizzes.map(q =>
+      q.id === quizId
+        ? { ...q, deadline: newDeadline }
+        : q
+    ));
   };
   const deleteCourse = (courseId) => {
     if (window.confirm("Are you sure you want to delete this course? All enrollment data for this course will be lost.")) {
@@ -268,32 +296,17 @@ export default function InstructorDashboard() {
           )}
 
           {activeTab === "quizzes" && (
-            <div>
-              <h2 className="mb-4 fw-bold">Quiz Management</h2>
-              <div className="row">
-                <div className="col-md-6 mb-4">
-                  <div className="card shadow border-0">
-                    <div className="card-body">
-                      <h5 className="card-title fw-bold mb-3">Create Manual Quiz</h5>
-                      <ManualQuizCreatorWrapper courses={myCourses} onCreateQuiz={addQuiz} />
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <h4 className="mt-4 mb-3">Active Quizzes</h4>
-              <div className="row">
-                {myQuizzes.map(quiz => (
-                  <div key={quiz.id} className="col-md-4 mb-4">
-                    <div className="card shadow border-0">
-                      <div className="card-body">
-                        <h6 className="fw-bold">{quiz.title}</h6>
-                        <p className="small text-muted mb-0">Course: {courses.find(c => c.id === quiz.courseId)?.title}</p>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
+            <ErrorBoundary>
+              <QuizManagement
+                courses={courses}
+                quizzes={myQuizzes}
+                quizAttempts={quizAttempts}
+                onCreateQuiz={addQuiz}
+                onUpdateQuiz={updateQuiz}
+                onPublishQuiz={publishQuiz}
+                onExtendDeadline={extendDeadline}
+              />
+            </ErrorBoundary>
           )}
 
           {activeTab === "profile" && (
@@ -301,37 +314,6 @@ export default function InstructorDashboard() {
           )}
         </div>
       </div>
-    </div>
-  );
-}
-
-// Wrapper to handle Quiz Creation logic remains largely same but updated to match our ID types
-function ManualQuizCreatorWrapper({ courses, onCreateQuiz }) {
-  const [selectedCourseId, setSelectedCourseId] = useState("");
-
-  const handleCreateQuiz = (quizData) => {
-    if (!selectedCourseId) {
-      alert("Please select a course for the quiz.");
-      return;
-    }
-    const quiz = {
-      courseId: selectedCourseId,
-      ...quizData
-    };
-    onCreateQuiz(quiz);
-    alert("Quiz created successfully!");
-  };
-
-  return (
-    <div>
-      <div className="mb-3">
-        <label className="form-label">Associated Course</label>
-        <select className="form-select" value={selectedCourseId} onChange={(e) => setSelectedCourseId(e.target.value)}>
-          <option value="">Choose a course...</option>
-          {courses.map(c => <option key={c.id} value={c.id}>{c.title}</option>)}
-        </select>
-      </div>
-      {selectedCourseId && <ManualQuizCreator onCreate={handleCreateQuiz} />}
     </div>
   );
 }
