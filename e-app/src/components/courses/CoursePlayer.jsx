@@ -6,9 +6,24 @@ export default function CoursePlayer({ course, onBack, onEnroll, isEnrolled, onT
 
   const getEmbedUrl = (url) => {
     if (!url) return "";
+    
+    // Handle various YouTube URL formats
+    const youtubeRegex = /^(?:(?:https?:)?\/\/)?(?:www\.)?(?:m\.)?(?:youtube\.com|youtu\.be)\/?(?:watch\?v=|embed\/|v\/|shorts\/)?([a-zA-Z0-9_-]{11})/;
+    const match = url.match(youtubeRegex);
+    
+    if (match && match[1]) {
+      return `https://www.youtube.com/embed/${match[1]}`;
+    }
+    
+    // If it's already an embed URL, return as is
+    if (url.includes("youtube.com/embed/")) {
+      return url;
+    }
+    
+    // For other URLs, try the original regex
     const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
-    const match = url.match(regExp);
-    return match && match[2].length === 11 ? `https://www.youtube.com/embed/${match[2]}` : url;
+    const oldMatch = url.match(regExp);
+    return oldMatch && oldMatch[2].length === 11 ? `https://www.youtube.com/embed/${oldMatch[2]}` : url;
   };
 
   const handleTopicClick = (item) => {

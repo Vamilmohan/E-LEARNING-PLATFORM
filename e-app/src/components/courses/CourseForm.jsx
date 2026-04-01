@@ -7,13 +7,13 @@ export default function CourseForm({ onSubmit, onCancel }) {
     description: "",
     thumbnail: "",
     duration: "",
-    content: [{ topic: "", type: "url", link: "", topicDesc: "" }] 
+    content: [{ topic: "", type: "url", videoUrl: "", topicDesc: "" }] 
   });
 
   const handleAddTopic = () => {
     setCourseData({
       ...courseData,
-      content: [...courseData.content, { topic: "", type: "url", link: "", topicDesc: "" }]
+      content: [...courseData.content, { topic: "", type: "url", videoUrl: "", topicDesc: "" }]
     });
   };
 
@@ -88,7 +88,7 @@ export default function CourseForm({ onSubmit, onCancel }) {
           
           <div className="mb-2">
             {item.type === 'url' ? (
-              <input type="url" className="form-control form-control-sm" placeholder="Paste Link Here" onChange={(e) => handleTopicChange(index, 'link', e.target.value)} required />
+              <input type="url" className="form-control form-control-sm" placeholder="Paste YouTube URL (e.g., https://www.youtube.com/watch?v=..." onChange={(e) => handleTopicChange(index, 'videoUrl', e.target.value)} required />
             ) : (
               <input type="file" className="form-control form-control-sm" onChange={(e) => handleFileUpload(e, index)} required />
             )}

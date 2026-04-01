@@ -8,10 +8,12 @@ import Profile from "./pages/Profile";
 import InstructorProfile from "./pages/InstructorProfile";
 import Home from "./pages/Home";
 import ProtectedRoute from "./routes/ProtectedRoute";
+import ChatBot from "react-chatbotify";
 
 export default function App() {
   return (
     <BrowserRouter>
+     <ChatBot/>
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/signup" element={<Signup />} />
