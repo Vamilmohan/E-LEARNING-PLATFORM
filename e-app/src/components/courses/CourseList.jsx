@@ -1,7 +1,7 @@
 import React,{useState} from "react";
 import CourseCard from "./CourseCard";
 
-export default function CourseList({courses,onViewCourse}){
+export default function CourseList({courses,onViewCourse,onEnrollCourse,enrolledCourseIds=[]}){
     const [searchTerm,setSearchTerm]=useState("");
     const filtered=courses.filter(c=>
         c.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -26,7 +26,7 @@ export default function CourseList({courses,onViewCourse}){
                 {filtered.length > 0 ? (
                     filtered.map(course => (
                         <div key={course.id} className="col-md-6 col-lg-4">
-                        <CourseCard course={course} onView={onViewCourse} />
+                        <CourseCard course={course} onView={onViewCourse} onEnroll={onEnrollCourse} isEnrolled={enrolledCourseIds.includes(course.id)} />
                         </div>
                     ))
                     ) : (

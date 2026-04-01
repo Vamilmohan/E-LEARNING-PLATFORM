@@ -6,6 +6,7 @@ import CoursePlayer from "../../components/courses/CoursePlayer";
 
 export default function AdminDashboard() {
   const { user, logout, users, updateUser, removeUser } = useAuth();
+  const [selectedInstructor, setSelectedInstructor] = useState(null);
   const [activeTab, setActiveTab] = useState("dashboard");
   const [selectedCourse, setSelectedCourse] = useState(null);
 
@@ -54,7 +55,7 @@ export default function AdminDashboard() {
   return (
     <div className="d-flex flex-column min-vh-100 bg-light">
       {/* Navbar */}
-      <nav className="navbar navbar-expand-lg navbar-dark bg-dark shadow">
+      <nav className="navbar navbar-expand-lg navbar-dark bg-dark shadow" style={{ height: '56px' }}>
         <div className="container-fluid">
           <a className="navbar-brand fw-bold" href="#">
             <i className="bi bi-shield-lock-fill me-2 text-warning"></i>Admin Central
@@ -72,9 +73,9 @@ export default function AdminDashboard() {
         </div>
       </nav>
 
-      <div className="d-flex flex-grow-1">
+      <div className="d-flex flex-grow-1" style={{ minHeight: 'calc(100vh - 56px)' }}>
         {/* Sidebar */}
-        <div className="bg-white shadow-sm p-3" style={{ width: '250px', minHeight: 'calc(100vh - 76px)' }}>
+        <div className="bg-white shadow-sm p-3" style={{ width: '250px', minHeight: '100%' }}>
           <h5 className="text-secondary mb-4 small fw-bold text-uppercase">Management</h5>
           <ul className="nav flex-column">
             <li className="nav-item mb-2">
@@ -139,34 +140,112 @@ export default function AdminDashboard() {
           )}
 
           {activeTab === "users" && (
-            <div>
-              <h2 className="mb-4 fw-bold">User Directory</h2>
-              <div className="table-responsive bg-white p-3 rounded shadow-sm">
-                <table className="table table-hover align-middle">
-                  <thead className="table-light">
-                    <tr>
-                      <th>Name</th>
-                      <th>Email</th>
-                      <th>Role</th>
-                      <th>Status</th>
-                      <th>Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {users.map(u => (
-                      <tr key={u.id}>
-                        <td>{u.name}</td>
-                        <td>{u.email}</td>
-                        <td><span className={`badge ${u.role === 'admin' ? 'bg-dark' : u.role === 'instructor' ? 'bg-info' : 'bg-secondary'}`}>{u.role}</span></td>
-                        <td>{u.verified ? <span className="text-success"><i className="bi bi-check-circle-fill"></i> Verified</span> : <span className="text-warning">Pending</span>}</td>
-                        <td>
-                          {!u.verified && <button className="btn btn-sm btn-success me-2" onClick={() => verifyUser(u.id)}>Verify</button>}
-                          {u.role === "instructor" && <button className="btn btn-sm btn-outline-danger" onClick={() => removeInstructor(u.id)}>Remove</button>}
-                        </td>
+            <div className="container-fluid p-0">
+              <h2 className="mb-4 fw-bold">User Management</h2>
+
+              {/* --- INSTRUCTORS SECTION --- */}
+              <div className="card shadow-sm border-0 mb-5">
+                <div className="card-header bg-primary text-white fw-bold">
+                  <i className="bi bi-person-badge me-2"></i> Platform Instructors
+                </div>
+                <div className="table-responsive">
+                  <table className="table table-hover align-middle mb-0">
+                    <thead>
+                      <tr>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Courses</th>
+                        <th>Actions</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody>
+                      {users.filter(u => u.role === 'instructor').map(inst => {
+                        // Calculate students under this instructor
+                        const instCourseIds = courses.filter(c => c.instructorId === inst.id).map(c => c.id);
+                        const studentCount = enrollments.filter(e => instCourseIds.includes(e.courseId)).length;
+
+                        return (
+                          <tr key={inst.id}>
+                            <td>
+                              <div className="fw-bold">{inst.name}</div>
+                              <button className="btn btn-sm btn-link text-primary p-0" onClick={() => setSelectedInstructor(inst.id)}>
+                                View {studentCount} Enrolled Students
+                              </button>
+                            </td>
+                            <td>{inst.email}</td>
+                            <td>{instCourseIds.length} Courses</td>
+                            <td>
+                              {!inst.verified && <button className="btn btn-sm btn-success me-2" onClick={() => verifyUser(inst.id)}>Verify</button>}
+                              <button className="btn btn-sm btn-outline-danger" onClick={() => removeInstructor(inst.id)}>Remove</button>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {selectedInstructor && (
+                <div className="card shadow-sm border-0 mb-4">
+                  <div className="card-header bg-info text-white fw-bold">Students Enrolled under Selected Instructor</div>
+                  <div className="card-body">
+                    <button className="btn btn-sm btn-secondary mb-3" onClick={() => setSelectedInstructor(null)}>Close</button>
+                    <div className="table-responsive">
+                      <table className="table table-bordered">
+                        <thead>
+                          <tr><th>Student ID</th><th>Name</th><th>Course</th><th>Action</th></tr>
+                        </thead>
+                        <tbody>
+                          {enrollments.filter(e => courses.some(c => c.instructorId === selectedInstructor && c.id === e.courseId)).map((enrollItem, idx) => {
+                            const student = users.find(u => u.id === enrollItem.userId);
+                            const course = courses.find(c => c.id === enrollItem.courseId);
+                            if (!student || !course) return null;
+                            return (
+                              <tr key={`i-${idx}`}>
+                                <td>{student.id}</td>
+                                <td>{student.name}</td>
+                                <td>{course.title}</td>
+                                <td><button className="btn btn-sm btn-outline-primary" disabled>View</button></td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* --- STUDENTS SECTION --- */}
+              <div className="card shadow-sm border-0">
+                <div className="card-header bg-secondary text-white fw-bold">
+                  <i className="bi bi-people me-2"></i> Registered Students
+                </div>
+                <div className="table-responsive">
+                  <table className="table table-hover align-middle mb-0">
+                    <thead>
+                      <tr>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Enrolled In</th>
+                        <th>Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {users.filter(u => u.role === 'student').map(stud => (
+                        <tr key={stud.id}>
+                          <td className="fw-bold">{stud.name}</td>
+                          <td>{stud.email}</td>
+                          <td>{enrollments.filter(e => e.userId === stud.id).length} Courses</td>
+                          <td>
+                            <button className="btn btn-sm btn-outline-danger" onClick={() => removeUser(stud.id)}>Delete Account</button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             </div>
           )}
@@ -196,20 +275,28 @@ export default function AdminDashboard() {
             <div>
               <h2 className="mb-4 fw-bold">Platform Complaints</h2>
               <div className="row g-3">
-                {complaints.map(c => (
-                  <div key={c.id} className="col-md-6">
-                    <div className={`card shadow-sm border-start border-4 ${c.status === 'pending' ? 'border-danger' : 'border-success'}`}>
-                      <div className="card-body">
-                        <div className="d-flex justify-content-between">
-                          <h6 className="fw-bold">From: {c.userName}</h6>
-                          <span className={`badge ${c.status === 'pending' ? 'bg-danger' : 'bg-success'}`}>{c.status}</span>
+                {complaints.length === 0 ? (
+                  <div className="col-12 text-center py-5">
+                    <i className="bi bi-info-circle display-4 text-muted mb-3"></i>
+                    <h5 className="text-muted">No complaints yet</h5>
+                    <p className="text-muted">Great job! No outstanding issues.</p>
+                  </div>
+                ) : (
+                  complaints.map(c => (
+                    <div key={c.id} className="col-md-6">
+                      <div className={`card shadow-sm border-start border-4 ${c.status === 'pending' ? 'border-danger' : 'border-success'}`}>
+                        <div className="card-body">
+                          <div className="d-flex justify-content-between">
+                            <h6 className="fw-bold">From: {c.userName}</h6>
+                            <span className={`badge ${c.status === 'pending' ? 'bg-danger' : 'bg-success'}`}>{c.status}</span>
+                          </div>
+                          <p className="small mt-2">{c.complaint}</p>
+                          {c.status === 'pending' && <button className="btn btn-sm btn-primary w-100 mt-2" onClick={() => solveComplaint(c.id)}>Resolve Issue</button>}
                         </div>
-                        <p className="small mt-2">{c.complaint}</p>
-                        {c.status === 'pending' && <button className="btn btn-sm btn-primary w-100 mt-2" onClick={() => solveComplaint(c.id)}>Resolve Issue</button>}
                       </div>
                     </div>
-                  </div>
-                ))}
+                  ))
+                )}
               </div>
             </div>
           )}

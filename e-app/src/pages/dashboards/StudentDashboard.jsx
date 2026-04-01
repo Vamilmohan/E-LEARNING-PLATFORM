@@ -8,11 +8,11 @@ import QuizTaker from "../../components/quizzes/QuizTaker";
 export default function StudentDashboard() {
   const { user, logout } = useAuth();
   const [activeTab, setActiveTab] = useState("dashboard");
-  const [selectedCourse,setSelectedCourse]=useState(null);
+  const [selectedCourse, setSelectedCourse] = useState(null);
 
-  // Data
   const [courses, setCourses] = useState(() => JSON.parse(localStorage.getItem("APP_COURSES") || "[]"));
   const [enrollments, setEnrollments] = useState(() => JSON.parse(localStorage.getItem("APP_ENROLLMENTS") || "[]"));
+  const [courseProgress, setCourseProgress] = useState(() => JSON.parse(localStorage.getItem("APP_COURSE_PROGRESS") || "{}"));
   const [quizzes, setQuizzes] = useState(() => JSON.parse(localStorage.getItem("APP_QUIZZES") || "[]"));
   const [complaints, setComplaints] = useState(() => JSON.parse(localStorage.getItem("APP_COMPLAINTS") || "[]"));
   const [takingQuiz, setTakingQuiz] = useState(null);
@@ -25,6 +25,10 @@ export default function StudentDashboard() {
   useEffect(() => {
     localStorage.setItem("APP_ENROLLMENTS", JSON.stringify(enrollments));
   }, [enrollments]);
+
+  useEffect(() => {
+    localStorage.setItem("APP_COURSE_PROGRESS", JSON.stringify(courseProgress));
+  }, [courseProgress]);
 
   useEffect(() => {
     localStorage.setItem("APP_QUIZZES", JSON.stringify(quizzes));
@@ -40,17 +44,13 @@ export default function StudentDashboard() {
 
   const enrolledCourses = (enrollments || []).filter(e => e.userId === user.id).map(e => (courses || []).find(c => c.id === e.courseId)).filter(Boolean);
   const enrolledCourseIds = enrolledCourses.map(c => c.id);
+  const completedCourses = enrolledCourses.filter(course => (courseProgress[course.id]?.progress || 0) >= 100);
 
   const availableQuizzes = quizzes.filter(q => {
     if (!q.published || !enrolledCourseIds.includes(q.courseId)) return false;
-
-    // Check if quiz is still available (not past deadline)
     if (q.deadline && new Date() > new Date(q.deadline)) return false;
-
-    // Check attempt limit
     const userAttempts = quizAttempts.filter(a => a.quizId === q.id && a.studentId === user.id);
     if (q.maxAttempts && userAttempts.length >= q.maxAttempts) return false;
-
     return true;
   });
 
@@ -68,7 +68,20 @@ export default function StudentDashboard() {
   });
 
   const enroll = (courseId) => {
+    if ((enrollments || []).some(e => e.userId === user.id && e.courseId === courseId)) return;
     setEnrollments([...enrollments, { userId: user.id, courseId }]);
+  };
+
+  const handleTopicComplete = (courseId, topic) => {
+    const course = courses.find(c => c.id === courseId);
+    if (!course) return;
+    const totalTopics = course.content?.length || 0;
+    setCourseProgress(prev => {
+      const already = prev[courseId]?.completedTopics || [];
+      const nextTopics = Array.from(new Set([...already, topic]));
+      const progress = totalTopics ? Math.round((nextTopics.length / totalTopics) * 100) : 0;
+      return { ...prev, [courseId]: { completedTopics: nextTopics, progress } };
+    });
   };
 
   const fileComplaint = (complaint) => {
@@ -78,20 +91,15 @@ export default function StudentDashboard() {
   const handleQuizComplete = (attemptData) => {
     setQuizAttempts([...quizAttempts, attemptData]);
     setTakingQuiz(null);
-    // Removed alert - results will be shown in completed quizzes section
   };
 
   return (
     <div className="d-flex flex-column min-vh-100 bg-light">
-      {/* Navbar */}
-      <nav className="navbar navbar-expand-lg navbar-dark bg-primary shadow">
+      <nav className="navbar navbar-expand-lg navbar-dark bg-primary shadow" style={{ height: '56px' }}>
         <div className="container-fluid">
           <a className="navbar-brand fw-bold" href="#">
             <i className="bi bi-book-half me-2"></i>E-Learning Platform
           </a>
-          <button className="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-            <span className="navbar-toggler-icon"></span>
-          </button>
           <div className="collapse navbar-collapse" id="navbarNav">
             <ul className="navbar-nav ms-auto">
               <li className="nav-item">
@@ -105,9 +113,8 @@ export default function StudentDashboard() {
         </div>
       </nav>
 
-      <div className="d-flex flex-grow-1">
-        {/* Sidebar */}
-        <div className="bg-white shadow-sm p-3" style={{ width: '250px', minHeight: 'calc(100vh - 76px)' }}>
+      <div className="d-flex flex-grow-1" style={{ minHeight: 'calc(100vh - 56px)' }}>
+        <div className="bg-white shadow-sm p-3" style={{ width: '250px', minHeight: '100%' }}>
           <h5 className="text-primary mb-4">Student Menu</h5>
           <ul className="nav flex-column">
             <li className="nav-item mb-2">
@@ -120,7 +127,7 @@ export default function StudentDashboard() {
                 <i className="bi bi-collection me-2"></i>Enrolled Courses
               </button>
             </li>
-              <li className="nav-item mb-2">
+            <li className="nav-item mb-2">
               <button className={`nav-link btn btn-link text-start ${activeTab === "Completed Courses" ? "text-primary fw-bold" : "text-dark"}`} onClick={() => setActiveTab("Completed Courses")}>
                 <i className="bi bi-check-square-fill me-2"></i>Completed Courses
               </button>
@@ -130,7 +137,7 @@ export default function StudentDashboard() {
                 <i className="bi bi-search me-2"></i>Browse Courses
               </button>
             </li>
-              <li className="nav-item mb-2">
+            <li className="nav-item mb-2">
               <button className={`nav-link btn btn-link text-start ${activeTab === "mandatory courses" ? "text-primary fw-bold" : "text-dark"}`} onClick={() => setActiveTab("mandatory courses")}>
                 <i className="bi bi-asterisk me-2"></i>Mandatory Courses
               </button>
@@ -155,7 +162,6 @@ export default function StudentDashboard() {
                 <i className="bi bi-person me-2"></i>Profile
               </button>
             </li>
-          
             <li className="nav-item mb-2">
               <button className={`nav-link btn btn-link text-start ${activeTab === "complaints" ? "text-primary fw-bold" : "text-dark"}`} onClick={() => setActiveTab("complaints")}>
                 <i className="bi bi-exclamation-triangle me-2"></i>Complaints
@@ -164,7 +170,6 @@ export default function StudentDashboard() {
           </ul>
         </div>
 
-        {/* Main Content */}
         <div className="flex-grow-1 p-4">
           {activeTab === "dashboard" && (
             <div>
@@ -187,7 +192,7 @@ export default function StudentDashboard() {
                     <div className="card-body">
                       <i className="bi bi-trophy display-4 text-success"></i>
                       <h5 className="card-title">Completed Courses</h5>
-                      <p className="card-text display-4">0</p> {/* Placeholder */}
+                      <p className="card-text display-4">{completedCourses.length}</p>
                     </div>
                   </div>
                 </div>
@@ -211,7 +216,7 @@ export default function StudentDashboard() {
                 </div>
               </div>
               <h4>Recent Activity</h4>
-              <p>No recent activity.</p> {/* Placeholder */}
+              <p>No recent activity.</p>
             </div>
           )}
 
@@ -219,43 +224,46 @@ export default function StudentDashboard() {
             <div>
               <h2 className="mb-4 fw-bold text-dark">My Enrolled Courses</h2>
               <div className="row">
-                {enrolledCourses.map(course => (
-                  <div key={course.id} className="col-md-6 mb-4">
-                    <div className="card shadow h-100">
-                      <div className="card-body">
-                        <h5 className="card-title">{course.title}</h5>
-                        <p className="card-text">{course.description}</p>
-                        <p className="text-muted">Instructor: {course.instructorName}</p>
-                        <div className="progress mb-2">
-                          <div className="progress-bar bg-success" style={{ width: '0%' }}></div>
+                {enrolledCourses.map(course => {
+                  const progress = courseProgress[course.id]?.progress || 0;
+                  return (
+                    <div key={course.id} className="col-md-6 mb-4">
+                      <div className="card shadow h-100">
+                        <div className="card-body">
+                          <h5 className="card-title">{course.title}</h5>
+                          <p className="card-text">{course.description}</p>
+                          <p className="text-muted">Instructor: {course.instructorName}</p>
+                          <div className="progress mb-2">
+                            <div className="progress-bar bg-success" style={{ width: `${progress}%` }}></div>
+                          </div>
+                          <small>{progress}% Complete</small>
+                          <button
+                            className="btn btn-primary mt-2 me-2"
+                            onClick={() => {
+                              setSelectedCourse(course);
+                              setActiveTab("view-course");
+                            }}
+                          >
+                            Continue Learning
+                          </button>
+                          <button
+                            className="btn btn-outline-primary mt-2"
+                            onClick={() => setActiveTab("quizzes")}
+                          >
+                            View Quizzes
+                          </button>
                         </div>
-                        <small>0% Complete</small>
-                        <button 
-                          className="btn btn-primary mt-2 me-2"
-                          onClick={() => {
-                            setSelectedCourse(course);
-                            setActiveTab("view-course");
-                          }}
-                        >
-                          Continue Learning
-                        </button>
-                        <button 
-                          className="btn btn-outline-primary mt-2"
-                          onClick={() => setActiveTab("quizzes")}
-                        >
-                          View Quizzes
-                        </button>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
                 {enrolledCourses.length === 0 && (
                   <div className="col-12">
                     <div className="text-center py-5">
                       <i className="bi bi-info-circle display-4 text-muted mb-3"></i>
                       <h5 className="text-muted">No enrolled courses yet</h5>
                       <p className="text-muted">Browse available courses and enroll to start learning</p>
-                      <button 
+                      <button
                         className="btn btn-primary mt-3"
                         onClick={() => setActiveTab("browse")}
                       >
@@ -271,14 +279,44 @@ export default function StudentDashboard() {
           {activeTab === "browse" && (
             <div>
               <h2 className="mb-4 fw-bold text-dark">Explore New Skills</h2>
-              {/* We pass the availableCourses and a function to 'View' them */}
-              <CourseList 
-                courses={availableCourses} 
+              <CourseList
+                courses={availableCourses}
                 onViewCourse={(course) => {
                   setSelectedCourse(course);
-                  setActiveTab("view-course"); // We will create this tab next!
-                }} 
+                  setActiveTab("view-course");
+                }}
+                onEnrollCourse={enroll}
+                enrolledCourseIds={enrolledCourseIds}
               />
+            </div>
+          )}
+
+          {activeTab === "Completed Courses" && (
+            <div>
+              <h2 className="mb-4 fw-bold text-dark">Completed Courses</h2>
+              <div className="row">
+                {completedCourses.map(course => (
+                  <div key={course.id} className="col-md-6 mb-4">
+                    <div className="card shadow h-100">
+                      <div className="card-body">
+                        <h5 className="card-title">{course.title}</h5>
+                        <p className="card-text">{course.description}</p>
+                        <p className="text-success">Completed</p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+                {completedCourses.length === 0 && (
+                  <div className="col-12">
+                    <div className="text-center py-5">
+                      <i className="bi bi-info-circle display-4 text-muted mb-3"></i>
+                      <h5 className="text-muted">No courses completed yet</h5>
+                      <p className="text-muted">Once you finish all topics in a course, it will be shown here.</p>
+                      <button className="btn btn-primary mt-3" onClick={() => setActiveTab("browse")}>Browse Courses</button>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           )}
 
@@ -304,7 +342,7 @@ export default function StudentDashboard() {
                           )}
                           {userAttempts.length > 0 && (
                             <p className="text-muted small">
-                              Attempts: {userAttempts.length}/{quiz.maxAttempts || '∞'}
+                              Attempts: {userAttempts.length}/{quiz.maxAttempts || '8'}
                               {userAttempts.length > 0 && (
                                 <span className="ms-2">
                                   Best Score: {Math.max(...userAttempts.map(a => a.score))}%
@@ -314,10 +352,7 @@ export default function StudentDashboard() {
                           )}
                           <div className="mt-auto">
                             {canTakeQuiz ? (
-                              <button
-                                className="btn btn-success w-100"
-                                onClick={() => setTakingQuiz(quiz)}
-                              >
+                              <button className="btn btn-success w-100" onClick={() => setTakingQuiz(quiz)}>
                                 <i className="bi bi-play-circle me-2"></i>Take Quiz
                               </button>
                             ) : (
@@ -363,27 +398,16 @@ export default function StudentDashboard() {
                           </div>
                           <div className="col-6">
                             <div className="p-2 bg-light rounded">
-                              <div className={`h4 fw-bold ${
-                                attempt.quiz?.hasPassingPercentage && attempt.quiz?.passingPercentage
-                                  ? attempt.score >= attempt.quiz.passingPercentage ? 'text-success' : 'text-danger'
-                                  : attempt.score >= 70 ? 'text-success' : 'text-danger'
-                              }`}>
-                                {attempt.quiz?.hasPassingPercentage && attempt.quiz?.passingPercentage
-                                  ? attempt.score >= attempt.quiz.passingPercentage ? 'Passed' : 'Failed'
-                                  : attempt.score >= 70 ? 'Passed' : 'Failed'
-                                }
+                              <div className={`h4 fw-bold ${attempt.quiz?.hasPassingPercentage && attempt.quiz?.passingPercentage ? attempt.score >= attempt.quiz.passingPercentage ? 'text-success' : 'text-danger' : attempt.score >= 70 ? 'text-success' : 'text-danger'}`}>
+                                {attempt.quiz?.hasPassingPercentage && attempt.quiz?.passingPercentage ? attempt.score >= attempt.quiz.passingPercentage ? 'Passed' : 'Failed' : attempt.score >= 70 ? 'Passed' : 'Failed'}
                               </div>
                               <small className="text-muted">Status</small>
                             </div>
                           </div>
                         </div>
-                        <p className="text-muted small mb-2">
-                          Completed on: {new Date(attempt.completedAt).toLocaleDateString()}
-                        </p>
+                        <p className="text-muted small mb-2">Completed on: {new Date(attempt.completedAt).toLocaleDateString()}</p>
                         {attempt.quiz?.hasPassingPercentage && attempt.quiz?.passingPercentage && (
-                          <p className="text-muted small mb-0">
-                            Passing Score: {attempt.quiz.passingPercentage}%
-                          </p>
+                          <p className="text-muted small mb-0">Passing Score: {attempt.quiz.passingPercentage}%</p>
                         )}
                       </div>
                     </div>
@@ -395,12 +419,7 @@ export default function StudentDashboard() {
                       <i className="bi bi-check-circle display-4 text-muted mb-3"></i>
                       <h5 className="text-muted">No completed quizzes yet</h5>
                       <p className="text-muted">Complete some quizzes to see them here</p>
-                      <button 
-                        className="btn btn-primary mt-3"
-                        onClick={() => setActiveTab("quizzes")}
-                      >
-                        Take a Quiz
-                      </button>
+                      <button className="btn btn-primary mt-3" onClick={() => setActiveTab("quizzes")}>Take a Quiz</button>
                     </div>
                   </div>
                 )}
@@ -409,17 +428,11 @@ export default function StudentDashboard() {
           )}
 
           {takingQuiz && (
-            <QuizTaker
-              quiz={takingQuiz}
-              studentId={user.id}
-              onComplete={handleQuizComplete}
-            />
+            <QuizTaker quiz={takingQuiz} studentId={user.id} onComplete={handleQuizComplete} />
           )}
 
           {activeTab === "profile" && (
-            <div>
-              <Profile />
-            </div>
+            <div><Profile /></div>
           )}
 
           {activeTab === "complaints" && (
@@ -434,16 +447,12 @@ export default function StudentDashboard() {
           )}
 
           {activeTab === "view-course" && selectedCourse && (
-            <CoursePlayer 
+            <CoursePlayer
               course={selectedCourse}
               isEnrolled={(enrollments || []).some(e => e.userId === user.id && e.courseId === selectedCourse.id)}
-              onEnroll={(courseId) => {
-                enroll(courseId);
-              }}
-              onBack={() => {
-                setSelectedCourse(null);
-                setActiveTab("browse");
-              }} 
+              onEnroll={enroll}
+              onBack={() => { setSelectedCourse(null); setActiveTab("browse"); }}
+              onTopicComplete={handleTopicComplete}
             />
           )}
         </div>
