@@ -3,18 +3,23 @@ import { useAuth } from "../../context/AuthContext";
 // --- NEW IMPORTS ---
 import CourseCard from "../../components/courses/CourseCard";
 import CoursePlayer from "../../components/courses/CoursePlayer";
+import StudentPerformanceDashboard from "../../components/StudentPerformanceDashboard";
 
 export default function AdminDashboard() {
   const { user, logout, users, updateUser, removeUser } = useAuth();
   const [selectedInstructor, setSelectedInstructor] = useState(null);
   const [activeTab, setActiveTab] = useState("dashboard");
   const [selectedCourse, setSelectedCourse] = useState(null);
+  const [selectedStudent, setSelectedStudent] = useState(null);
+  const [selectedCourseForStudent, setSelectedCourseForStudent] = useState(null);
 
   // Data
   const [courses, setCourses] = useState(() => JSON.parse(localStorage.getItem("APP_COURSES") || "[]"));
   const [enrollments, setEnrollments] = useState(() => JSON.parse(localStorage.getItem("APP_ENROLLMENTS") || "[]"));
   const [quizzes, setQuizzes] = useState(() => JSON.parse(localStorage.getItem("APP_QUIZZES") || "[]"));
   const [complaints, setComplaints] = useState(() => JSON.parse(localStorage.getItem("APP_COMPLAINTS") || "[]"));
+  const [courseProgress, setCourseProgress] = useState(() => JSON.parse(localStorage.getItem("APP_COURSE_PROGRESS") || "{}"));
+  const [quizAttempts, setQuizAttempts] = useState(() => JSON.parse(localStorage.getItem("APP_QUIZ_ATTEMPTS") || "[]"));
 
   // Sync Courses to LocalStorage when admin deletes something
   useEffect(() => {
@@ -206,7 +211,7 @@ export default function AdminDashboard() {
                                 <td>{student.id}</td>
                                 <td>{student.name}</td>
                                 <td>{course.title}</td>
-                                <td><button className="btn btn-sm btn-outline-primary" disabled>View</button></td>
+                                <td><button className="btn btn-sm btn-outline-primary" onClick={() => { setSelectedStudent(student); setSelectedCourseForStudent(course); }}>View</button></td>
                               </tr>
                             );
                           })}
@@ -215,6 +220,18 @@ export default function AdminDashboard() {
                     </div>
                   </div>
                 </div>
+              )}
+
+              {selectedStudent && selectedCourseForStudent && (
+                <StudentPerformanceDashboard
+                  student={selectedStudent}
+                  course={selectedCourseForStudent}
+                  enrollments={enrollments}
+                  courseProgress={courseProgress}
+                  quizAttempts={quizAttempts}
+                  quizzes={quizzes}
+                  onClose={() => { setSelectedStudent(null); setSelectedCourseForStudent(null); }}
+                />
               )}
 
               {/* --- STUDENTS SECTION --- */}

@@ -4,6 +4,7 @@ import Profile from "../Profile";
 import CourseList from "../../components/courses/CourseList";
 import CoursePlayer from "../../components/courses/CoursePlayer";
 import QuizTaker from "../../components/quizzes/QuizTaker";
+import StudentOwnPerformanceDashboard from "../../components/StudentOwnPerformanceDashboard";
 
 export default function StudentDashboard() {
   const { user, logout } = useAuth();
@@ -425,6 +426,16 @@ export default function StudentDashboard() {
                 )}
               </div>
             </div>
+          )}
+
+          {activeTab === "performance" && (
+            <StudentOwnPerformanceDashboard
+              user={user}
+              enrolledCourses={enrolledCourses}
+              courseProgress={courseProgress}
+              quizAttempts={quizAttempts}
+              quizzes={quizzes}
+            />
           )}
 
           {takingQuiz && (

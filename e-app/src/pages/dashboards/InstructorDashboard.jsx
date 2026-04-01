@@ -8,6 +8,7 @@ import CoursePlayer from "../../components/courses/CoursePlayer";
 import QuizManagement from "../../components/quizzes/QuizManagement";
 import ErrorBoundary from "../../components/ErrorBoundary";
 import InstructorAnalytics from "../../components/InstructorAnalytics";
+import StudentPerformanceDashboard from "../../components/StudentPerformanceDashboard";
 
 export default function InstructorDashboard() {
   const { user, logout, users } = useAuth();
@@ -21,12 +22,14 @@ export default function InstructorDashboard() {
   const [complaints, setComplaints] = useState(() => JSON.parse(localStorage.getItem("APP_COMPLAINTS") || "[]"));
   const [selectedCourse, setSelectedCourse] = useState(null);
   const [quizAttempts, setQuizAttempts] = useState(() => JSON.parse(localStorage.getItem("APP_QUIZ_ATTEMPTS") || "[]"));
+  const [courseProgress, setCourseProgress] = useState(() => JSON.parse(localStorage.getItem("APP_COURSE_PROGRESS") || "{}"));
 
   useEffect(() => { localStorage.setItem("APP_COURSES", JSON.stringify(courses)); }, [courses]);
   useEffect(() => { localStorage.setItem("APP_ENROLLMENTS", JSON.stringify(enrollments)); }, [enrollments]);
   useEffect(() => { localStorage.setItem("APP_QUIZZES", JSON.stringify(quizzes)); }, [quizzes]);
   useEffect(() => { localStorage.setItem("APP_COMPLAINTS", JSON.stringify(complaints)); }, [complaints]);
   useEffect(() => { localStorage.setItem("APP_QUIZ_ATTEMPTS", JSON.stringify(quizAttempts)); }, [quizAttempts]);
+  useEffect(() => { localStorage.setItem("APP_COURSE_PROGRESS", JSON.stringify(courseProgress)); }, [courseProgress]);
 
   const myCourses = (courses || []).filter(c => c.instructorId === user.id);
   const myEnrollments = (enrollments || []).filter(e => (myCourses || []).some(c => c.id === e.courseId));
@@ -155,7 +158,7 @@ export default function InstructorDashboard() {
                               <tr key={student.id}>
                                 <td>{student.id}</td>
                                 <td>{student.name}</td>
-                                <td><button className="btn btn-sm btn-primary" onClick={() => setSelectedStudentAnalytics(student)}>View</button></td>
+                                <td><button className="btn btn-sm btn-primary" onClick={() => setSelectedStudentAnalytics({ student, course })}>View</button></td>
                               </tr>
                             ))}
                           </tbody>
@@ -166,13 +169,15 @@ export default function InstructorDashboard() {
                 );
               })}
               {selectedStudentAnalytics && (
-                <div className="p-3 bg-light rounded shadow-sm mt-4">
-                  <h5>Student Analytics (coming soon)</h5>
-                  <p><strong>Name:</strong> {selectedStudentAnalytics.name}</p>
-                  <p><strong>ID:</strong> {selectedStudentAnalytics.id}</p>
-                  <p>Student activity analytics will be released soon.</p>
-                  <button className="btn btn-secondary btn-sm" onClick={() => setSelectedStudentAnalytics(null)}>Close</button>
-                </div>
+                <StudentPerformanceDashboard
+                  student={selectedStudentAnalytics.student}
+                  course={selectedStudentAnalytics.course}
+                  enrollments={enrollments}
+                  courseProgress={courseProgress}
+                  quizAttempts={quizAttempts}
+                  quizzes={quizzes}
+                  onClose={() => setSelectedStudentAnalytics(null)}
+                />
               )}
             </div>
           )}
