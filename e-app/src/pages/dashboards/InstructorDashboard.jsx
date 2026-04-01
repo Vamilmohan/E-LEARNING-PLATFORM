@@ -7,6 +7,7 @@ import CourseCard from "../../components/courses/CourseCard";
 import CoursePlayer from "../../components/courses/CoursePlayer";
 import QuizManagement from "../../components/quizzes/QuizManagement";
 import ErrorBoundary from "../../components/ErrorBoundary";
+import InstructorAnalytics from "../../components/InstructorAnalytics";
 
 export default function InstructorDashboard() {
   const { user, logout, users } = useAuth();
@@ -88,6 +89,7 @@ export default function InstructorDashboard() {
             <li className="nav-item mb-2"><button className={`nav-link btn btn-link text-start w-100 ${activeTab === "create-course" ? "text-primary fw-bold" : "text-dark"}`} onClick={() => setActiveTab("create-course")}><i className="bi bi-plus-circle me-2"></i>Create Course</button></li>
             <li className="nav-item mb-2"><button className={`nav-link btn btn-link text-start w-100 ${activeTab === "students" ? "text-primary fw-bold" : "text-dark"}`} onClick={() => setActiveTab("students")}><i className="bi bi-people me-2"></i>Students</button></li>
             <li className="nav-item mb-2"><button className={`nav-link btn btn-link text-start w-100 ${activeTab === "quizzes" ? "text-primary fw-bold" : "text-dark"}`} onClick={() => setActiveTab("quizzes")}><i className="bi bi-question-circle me-2"></i>Quizzes</button></li>
+            <li className="nav-item mb-2"><button className={`nav-link btn btn-link text-start w-100 ${activeTab === "analytics" ? "text-primary fw-bold" : "text-dark"}`} onClick={() => setActiveTab("analytics")}><i className="bi bi-bar-chart-line me-2"></i>Analytics</button></li>
             <li className="nav-item mb-2"><button className={`nav-link btn btn-link text-start w-100 ${activeTab === "profile" ? "text-primary fw-bold" : "text-dark"}`} onClick={() => setActiveTab("profile")}><i className="bi bi-person me-2"></i>Profile</button></li>
           </ul>
         </div>
@@ -179,6 +181,10 @@ export default function InstructorDashboard() {
             <ErrorBoundary>
               <QuizManagement courses={courses} quizzes={myQuizzes} quizAttempts={quizAttempts} onCreateQuiz={addQuiz} onUpdateQuiz={updateQuiz} onPublishQuiz={publishQuiz} onExtendDeadline={extendDeadline} />
             </ErrorBoundary>
+          )}
+
+          {activeTab === "analytics" && (
+            <InstructorAnalytics userId={user.id} courses={courses} enrollments={enrollments} quizzes={quizzes} quizAttempts={quizAttempts} users={users} />
           )}
 
           {activeTab === "profile" && <InstructorProfile />}
