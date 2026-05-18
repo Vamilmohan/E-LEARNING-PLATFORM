@@ -4,6 +4,7 @@ import { useToast } from "../../context/ToastContext";
 import Navbar from "../../components/layout/Navbar";
 import CourseCard from "../../components/courses/CourseCard";
 import CoursePlayer from "../../components/courses/CoursePlayer";
+import StudentPerformanceDashboard from "../../components/StudentPerformanceDashboard";
 
 const API_BASE = "http://localhost:5000/api";
 
@@ -12,22 +13,17 @@ export default function AdminDashboard() {
   const toast = useToast();
   const [selectedInstructor, setSelectedInstructor] = useState(null);
   const [activeTab, setActiveTab] = useState("dashboard");
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [selectedCourse, setSelectedCourse] = useState(null);
-
-<<<<<<< HEAD
   const [courses, setCourses] = useState([]);
   const [enrollments, setEnrollments] = useState([]);
   const [quizzes, setQuizzes] = useState([]);
   const [complaints, setComplaints] = useState([]);
   const [courseProgress, setCourseProgress] = useState({});
+  const [selectedStudent, setSelectedStudent] = useState(null);
+  const [selectedCourseForStudent, setSelectedCourseForStudent] = useState(null);
+  const [adminFeedback, setAdminFeedback] = useState({});
   const [quizAttempts, setQuizAttempts] = useState([]);
-=======
-  // Data
-  const [courses, setCourses] = useState(() => JSON.parse(localStorage.getItem("APP_COURSES") || "[]"));
-  const [enrollments, setEnrollments] = useState(() => JSON.parse(localStorage.getItem("APP_ENROLLMENTS") || "[]"));
-  const [quizzes, setQuizzes] = useState(() => JSON.parse(localStorage.getItem("APP_QUIZZES") || "[]"));
-  const [complaints, setComplaints] = useState(() => JSON.parse(localStorage.getItem("APP_COMPLAINTS") || "[]"));
->>>>>>> fork/main
 
   const fetchAll = useCallback(async () => {
     try {
@@ -75,18 +71,19 @@ export default function AdminDashboard() {
     updateUser(userId, { verified: true });
   };
 
-  const solveComplaint = async (complaintId) => {
+  const solveComplaint = async (complaintId, message = "") => {
     try {
       const response = await fetch(`${API_BASE}/complaints/${complaintId}/status`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ status: "solved" }),
+        body: JSON.stringify({ status: "solved", adminMessage: message }),
       });
       if (response.ok) {
         const updated = await response.json();
         setComplaints((prev) => prev.map((c) => (c.id === complaintId ? updated : c)));
         toast.success("Complaint resolved");
+        setAdminFeedback((prev) => ({ ...prev, [complaintId]: "" }));
       } else {
         toast.error("Failed to resolve complaint");
       }
@@ -121,7 +118,10 @@ export default function AdminDashboard() {
     if (!window.confirm("Remove this instructor and all their courses?")) return;
     const ok = await removeUser(userId);
     if (ok) {
+      toast.success("Instructor deleted successfully");
       await fetchAll();
+    } else {
+      toast.error("Failed to delete instructor");
     }
   };
 
@@ -135,15 +135,26 @@ export default function AdminDashboard() {
     }
     const ok = await removeUser(userId);
     if (ok) {
+      toast.success("Student deleted successfully");
       await fetchAll();
+    } else {
+      toast.error("Failed to delete student");
     }
   };
 
   return (
-    <div className="d-flex flex-column min-vh-100 bg-light">
+    <div className="d-flex flex-column min-vh-100 dashboard-shell">
       <Navbar />
       <div className="d-flex flex-grow-1" style={{ minHeight: "calc(100vh - 56px)" }}>
-        <div className="bg-white shadow-sm p-3" style={{ width: "250px", minHeight: "100%" }}>
+        <div
+          className={`bg-white shadow-sm p-3 ${isMenuOpen ? "d-block position-fixed top-0 start-0 vh-100" : "d-none d-lg-block"}`}
+          style={{
+            width: isMenuOpen ? "85%" : "250px",
+            maxWidth: isMenuOpen ? "320px" : "250px",
+            minHeight: "100%",
+            zIndex: isMenuOpen ? 1052 : "auto",
+          }}
+        >
           <h5 className="text-secondary mb-4 small fw-bold text-uppercase">Management</h5>
           <ul className="nav flex-column">
             <li className="nav-item mb-2">
@@ -184,7 +195,26 @@ export default function AdminDashboard() {
           </ul>
         </div>
 
+        {isMenuOpen && (
+          <div
+            className="d-lg-none"
+            style={{
+              position: "fixed",
+              inset: 0,
+              backgroundColor: "rgba(0,0,0,0.4)",
+              zIndex: 1050,
+            }}
+            onClick={() => setIsMenuOpen(false)}
+          ></div>
+        )}
+
         <div className="flex-grow-1 p-4">
+          <button
+            className="btn btn-outline-primary d-lg-none mb-3"
+            onClick={() => setIsMenuOpen(true)}
+          >
+            <i className="bi bi-list me-2"></i>Menu
+          </button>
           {activeTab === "dashboard" && (
             <div>
               <div
@@ -314,7 +344,6 @@ export default function AdminDashboard() {
                           </tr>
                         </thead>
                         <tbody>
-<<<<<<< HEAD
                           {enrollments
                             .filter((e) =>
                               courses.some(
@@ -350,21 +379,6 @@ export default function AdminDashboard() {
                                 </tr>
                               );
                             })}
-=======
-                          {enrollments.filter(e => courses.some(c => c.instructorId === selectedInstructor && c.id === e.courseId)).map((enrollItem, idx) => {
-                            const student = users.find(u => u.id === enrollItem.userId);
-                            const course = courses.find(c => c.id === enrollItem.courseId);
-                            if (!student || !course) return null;
-                            return (
-                              <tr key={`i-${idx}`}>
-                                <td>{student.id}</td>
-                                <td>{student.name}</td>
-                                <td>{course.title}</td>
-                                <td><button className="btn btn-sm btn-outline-primary" disabled>View</button></td>
-                              </tr>
-                            );
-                          })}
->>>>>>> fork/main
                         </tbody>
                       </table>
                     </div>
@@ -372,7 +386,6 @@ export default function AdminDashboard() {
                 </div>
               )}
 
-<<<<<<< HEAD
               {selectedStudent && selectedCourseForStudent && (
                 <StudentPerformanceDashboard
                   student={selectedStudent}
@@ -388,9 +401,6 @@ export default function AdminDashboard() {
                 />
               )}
 
-=======
-              {/* --- STUDENTS SECTION --- */}
->>>>>>> fork/main
               <div className="card shadow-sm border-0">
                 <div className="card-header bg-secondary text-white fw-bold">
                   <i className="bi bi-people me-2"></i> Registered Students
@@ -493,13 +503,36 @@ export default function AdminDashboard() {
                             </span>
                           </div>
                           <p className="small mt-2">{c.complaint}</p>
+                          {c.adminMessage && (
+                            <div className="alert alert-light border-start border-4 border-info mt-3">
+                              <strong>Admin note:</strong>
+                              <p className="mb-0 mt-1">{c.adminMessage}</p>
+                            </div>
+                          )}
                           {c.status === "pending" && (
+                            <>
+                              <div className="mb-3 mt-3">
+                                <label className="form-label small fw-semibold">Optional student note</label>
+                                <textarea
+                                  className="form-control"
+                                  rows={2}
+                                  value={adminFeedback[c.id] || ""}
+                                  onChange={(e) =>
+                                    setAdminFeedback((prev) => ({
+                                      ...prev,
+                                      [c.id]: e.target.value,
+                                    }))
+                                  }
+                                  placeholder="How should the student fix this? (optional)"
+                                />
+                              </div>
                             <button
                               className="btn btn-sm btn-primary w-100 mt-2"
-                              onClick={() => solveComplaint(c.id)}
+                                onClick={() => solveComplaint(c.id, adminFeedback[c.id] || "")}
                             >
                               Resolve Issue
                             </button>
+                            </>
                           )}
                         </div>
                       </div>

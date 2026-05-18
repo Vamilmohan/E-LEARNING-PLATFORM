@@ -34,6 +34,12 @@ const userSchema = new mongoose.Schema({
   otpExpires: {
     type: Date
   },
+  forgotPasswordOtp: {
+    type: String
+  },
+  forgotPasswordOtpExpires: {
+    type: Date
+  },
   profile: {
     avatar: String,
     bio: String,

@@ -1,14 +1,18 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
+import { useToast } from "../../context/ToastContext";
+import ForgotPasswordForm from "./ForgotPasswordForm";
 
 // Login form component - handles user login
 export default function LoginForm() {
   // State to store email and password input
   const [form, setForm] = useState({ email: "", password: "" });
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
   const navigate = useNavigate();
   // Get login function and error from auth context
   const { login, error } = useAuth();
+  const toast = useToast();
 
   // Handle form submission - validate and login user
   const handleSubmit = (e) => {
@@ -16,14 +20,24 @@ export default function LoginForm() {
     login(form).then((user) => {
       // If login successful, redirect to user's dashboard based on role
       if (user) {
+        toast.success("Login successful!");
         navigate(`/dashboard/${user.role}`);
       }
     });
   };
 
+  // If showing forgot password form, render it instead
+  if (showForgotPassword) {
+    return <ForgotPasswordForm onBack={() => setShowForgotPassword(false)} />;
+  }
+
   return (
-    <form className="card p-4 shadow" onSubmit={handleSubmit}>
-      <h3>Login</h3>
+    <form className="card p-4 shadow auth-card" onSubmit={handleSubmit}>
+      <div className="auth-card-header">
+        <span className="auth-card-badge">Welcome Back</span>
+        <h3>Login</h3>
+        <p>Sign in to continue your learning journey with a premium experience.</p>
+      </div>
       {/* Show error message if login fails */}
       {error && <div className="alert alert-danger">{error}</div>}
 
@@ -57,8 +71,33 @@ export default function LoginForm() {
         />
       </div>
 
+      {/* Forgot Password link */}
+      <div className="text-end mb-2">
+        <button
+          type="button"
+          className="btn btn-link btn-sm text-decoration-none p-0"
+          onClick={() => setShowForgotPassword(true)}
+        >
+          Forgot Password?
+        </button>
+      </div>
+
       {/* Login button */}
-      <button className="btn btn-success mt-3 w-100">Login</button>
+      <button className="btn btn-success mt-3 w-100 auth-action-btn">Login</button>
+
+      {/* Sign up link */}
+      <div className="text-center mt-3">
+        <p className="text-muted small">
+          Don't have an account?{" "}
+          <button
+            type="button"
+            className="btn btn-link btn-sm text-decoration-none auth-action-muted p-0"
+            onClick={() => navigate("/signup")}
+          >
+            Create Account
+          </button>
+        </p>
+      </div>
     </form>
   );
 }

@@ -20,8 +20,10 @@ export default function Signup() {
   return (
     <>
       <Navbar />
-      <div className="container mt-5" style={{ maxWidth: "500px" }}>
-        <SignupForm />
+      <div className="auth-page py-5">
+        <div className="container auth-container">
+          <SignupForm />
+        </div>
       </div>
     </>
   );

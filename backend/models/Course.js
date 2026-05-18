@@ -8,6 +8,12 @@ const topicSchema = new mongoose.Schema({
   topicDesc: { type: String, default: '' },
 });
 
+const materialSchema = new mongoose.Schema({
+  type: { type: String, enum: ['text', 'pdf'], default: 'text' },
+  value: { type: String, default: '' },
+  name: { type: String, default: '' },
+});
+
 const courseSchema = new mongoose.Schema(
   {
     title: { type: String, required: true, trim: true },
@@ -15,6 +21,7 @@ const courseSchema = new mongoose.Schema(
     thumbnail: { type: String, default: '' },
     duration: { type: String, default: '' },
     content: { type: [topicSchema], default: [] },
+    materials: { type: [materialSchema], default: [] },
     instructorId: { type: String, required: true },
     instructorName: { type: String, required: true },
     isMandatory: { type: Boolean, default: false },

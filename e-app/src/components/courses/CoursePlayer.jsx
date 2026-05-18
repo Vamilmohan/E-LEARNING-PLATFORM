@@ -11,12 +11,10 @@ export default function CoursePlayer({
   onUpdateLastActive,
 }) {
   const toast = useToast();
-  // Track which video is currently playing
   const [currentVideo, setCurrentVideo] = useState(course.content?.[0] || null);
-  // Track which topics student has marked as complete
   const [completedTopics, setCompletedTopics] = useState(new Set());
+  const [activeMaterialIndex, setActiveMaterialIndex] = useState(0);
 
-  // Update lastActive when course is opened
   useEffect(() => {
     if (isEnrolled && typeof onUpdateLastActive === "function") {
       onUpdateLastActive(course.id);
@@ -26,7 +24,6 @@ export default function CoursePlayer({
   const getEmbedUrl = (url) => {
     if (!url) return "";
 
-    // Handle various YouTube URL formats
     const youtubeRegex =
       /^(?:(?:https?:)?\/\/)?(?:www\.)?(?:m\.)?(?:youtube\.com|youtu\.be)\/?(?:watch\?v=|embed\/|v\/|shorts\/)?([a-zA-Z0-9_-]{11})/;
     const match = url.match(youtubeRegex);
@@ -35,12 +32,10 @@ export default function CoursePlayer({
       return `https://www.youtube.com/embed/${match[1]}`;
     }
 
-    // If it's already an embed URL, return as is
     if (url.includes("youtube.com/embed/")) {
       return url;
     }
 
-    // For other URLs, try the original regex
     const regExp =
       /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
     const oldMatch = url.match(regExp);
@@ -53,11 +48,20 @@ export default function CoursePlayer({
     setCurrentVideo(item);
   };
 
+  const activeMaterial = course.materials?.[activeMaterialIndex];
+
+  const printMaterial = (materialSrc) => {
+    if (!materialSrc) return;
+    const printWindow = window.open(materialSrc, "_blank");
+    if (printWindow) {
+      printWindow.focus();
+      printWindow.print();
+    }
+  };
+
   const handleMarkComplete = () => {
     if (!isEnrolled) {
-      toast.warning(
-        "Please enroll in the course to track and update progress.",
-      );
+      toast.warning("Please enroll in the course to track and update progress.");
       return;
     }
 
@@ -76,13 +80,17 @@ export default function CoursePlayer({
     }
   };
 
+        useEffect(() => {
+          if (course.materials && course.materials.length > 0) {
+            setActiveMaterialIndex(0);
+          }
+        }, [course.materials]);
   const totalTopics = course.content?.length || 0;
   const completedCount = completedTopics.size;
   const progressPercent = totalTopics
     ? Math.round((completedCount / totalTopics) * 100)
     : 0;
-  const shouldShowProgress =
-    isEnrolled && typeof onTopicComplete === "function";
+  const shouldShowProgress = isEnrolled && typeof onTopicComplete === "function";
 
   return (
     <div className="container-fluid p-0">
@@ -95,19 +103,74 @@ export default function CoursePlayer({
 
       <div className="row g-4">
         <div className="col-lg-8">
-          <div className="ratio ratio-16x9 shadow-sm rounded overflow-hidden bg-black">
-            {currentVideo ? (
-              <iframe
-                src={getEmbedUrl(currentVideo.videoUrl)}
-                title={currentVideo.topic}
-                allowFullScreen
-              ></iframe>
-            ) : (
-              <div className="d-flex align-items-center justify-content-center text-white">
-                <p>No video available for this course.</p>
-              </div>
-            )}
+          <div className="d-flex justify-content-between align-items-center mb-3">
+            <h5 className="mb-0 fw-bold">
+              <i className="bi bi-play-circle text-primary me-2"></i>
+              {currentVideo?.topic || "Select a topic to start"}
+            </h5>
+            <button
+              className="btn btn-sm btn-success"
+              onClick={handleMarkComplete}
+              disabled={!currentVideo}
+              title="Mark this topic as complete"
+            >
+              <i className="bi bi-check2-all me-1"></i>Mark Complete
+            </button>
           </div>
+
+          <div className="ratio ratio-16x9 shadow-sm rounded overflow-hidden bg-black">
+              {currentVideo ? (
+                <iframe
+                  src={getEmbedUrl(currentVideo.videoUrl)}
+                  title={currentVideo.topic}
+                  allowFullScreen
+                ></iframe>
+              ) : (
+                <div className="d-flex align-items-center justify-content-center text-white">
+                  <p>No video available for this course.</p>
+                </div>
+              )}
+            </div>
+
+          {activeMaterial && (
+            <div className="card shadow-sm border-0 mt-4">
+              <div className="card-header bg-white py-3">
+                <h5 className="mb-0 fw-bold">Document Preview</h5>
+              </div>
+              <div className="card-body">
+                {activeMaterial.type === "pdf" ? (
+                  <iframe
+                    src={activeMaterial.value || activeMaterial.content}
+                    title={activeMaterial.name || `Document ${activeMaterialIndex + 1}`}
+                    className="w-100 border rounded"
+                    style={{ minHeight: "520px" }}
+                  />
+                ) : (
+                  <div className="border rounded p-3 bg-light">
+                    <h6 className="fw-bold">{activeMaterial.name || `Document ${activeMaterialIndex + 1}`}</h6>
+                    <p className="mb-0 text-secondary">This document can be downloaded or opened in a separate viewer.</p>
+                    <a
+                      href={activeMaterial.value || activeMaterial.content}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="btn btn-outline-primary btn-sm mt-3"
+                    >
+                      Open Document
+                    </a>
+                  </div>
+                )}
+                <div className="mt-3 d-flex flex-wrap gap-2">
+                  <a
+                    href={activeMaterial.value || activeMaterial.content}
+                    download={activeMaterial.name || `document-${activeMaterialIndex + 1}`}
+                    className="btn btn-outline-secondary btn-sm"
+                  >
+                    Download
+                  </a>
+                </div>
+              </div>
+            </div>
+          )}
 
           <h3 className="mt-4 fw-bold">{course.title}</h3>
           <p className="text-secondary">{course.description}</p>
@@ -131,9 +194,7 @@ export default function CoursePlayer({
                 </small>
               </>
             ) : (
-              <p className="text-muted mb-0">
-                Progress tracking available after enrolling.
-              </p>
+              <p className="text-muted mb-0">Progress tracking available after enrolling.</p>
             )}
           </div>
 
@@ -153,17 +214,6 @@ export default function CoursePlayer({
                 <i className="bi bi-person-plus me-2"></i>Enroll Now
               </button>
             ))}
-
-          <div className="mt-3">
-            <button
-              className="btn btn-outline-success w-100"
-              onClick={handleMarkComplete}
-              disabled={!currentVideo}
-            >
-              <i className="bi bi-check2-all me-2"></i>Mark Current Topic
-              Complete
-            </button>
-          </div>
         </div>
 
         <div className="col-lg-4">
@@ -171,10 +221,7 @@ export default function CoursePlayer({
             <div className="card-header bg-white py-3">
               <h5 className="mb-0 fw-bold">Course Content</h5>
             </div>
-            <div
-              className="list-group list-group-flush overflow-auto"
-              style={{ maxHeight: "450px" }}
-            >
+            <div className="list-group list-group-flush overflow-auto" style={{ maxHeight: "450px" }}>
               {course.content?.map((item, index) => (
                 <button
                   key={index}

@@ -286,7 +286,7 @@ export default function InstructorProfile() {
   }
 
   return (
-    <div className="instructor-profile-page">
+    <div className={`instructor-profile-page ${darkMode ? "dark-mode" : ""}`}>
       <div className="profile-header-card">
         <div>
           <p className="eyebrow">Instructor Profile</p>

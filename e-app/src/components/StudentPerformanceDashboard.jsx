@@ -226,35 +226,6 @@ const StudentPerformanceDashboard = ({
               </div>
             </div>
 
-            {/* Watch Activity */}
-            <div className="card mb-4">
-              <div className="card-header bg-light">
-                <h6 className="mb-0">Watch Activity</h6>
-              </div>
-              <div className="card-body">
-                <div className="row text-center">
-                  <div className="col-md-4">
-                    <div className="border rounded p-3">
-                      <h4 className="text-success">{totalWatchTime}</h4>
-                      <small className="text-muted">Total Watch Time</small>
-                    </div>
-                  </div>
-                  <div className="col-md-4">
-                    <div className="border rounded p-3">
-                      <h4 className="text-primary">{completedLessons}</h4>
-                      <small className="text-muted">Videos Completed</small>
-                    </div>
-                  </div>
-                  <div className="col-md-4">
-                    <div className="border rounded p-3">
-                      <h4 className="text-warning">{lastActiveDate}</h4>
-                      <small className="text-muted">Last Active</small>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
             {/* Quiz Performance */}
             <div className="card mb-4">
               <div className="card-header bg-light">

@@ -6,6 +6,7 @@ const complaintSchema = new mongoose.Schema(
     userId: { type: String, required: true },
     userName: { type: String, required: true },
     complaint: { type: String, required: true },
+    adminMessage: { type: String, default: "" },
     status: { type: String, enum: ['pending', 'solved'], default: 'pending' },
   },
   { timestamps: true },

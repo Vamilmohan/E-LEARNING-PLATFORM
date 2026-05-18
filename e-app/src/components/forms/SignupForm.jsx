@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
+import { useToast } from "../../context/ToastContext";
+import { useChatBot } from "../../context/ChatBotContext";
 
 // SignupForm - form for new users to create an account
 export default function SignupForm() {
@@ -18,6 +20,9 @@ export default function SignupForm() {
   const navigate = useNavigate();
   // Get auth functions and state from auth context
   const { sendOTP, verifyOTP, error, message, loading } = useAuth();
+  const toast = useToast();
+  // Get chatbot function from chatbot context
+  const { openChatBot } = useChatBot();
 
   // Handle form submission - send OTP
   const handleSendOTP = (e) => {
@@ -70,6 +75,7 @@ export default function SignupForm() {
     setErrors({});
     verifyOTP({ email: form.email, otp }).then((user) => {
       if (user) {
+        toast.success("User created successfully!");
         navigate(`/dashboard/${user.role}`);
       }
     });
@@ -77,8 +83,12 @@ export default function SignupForm() {
 
   if (step === "otp") {
     return (
-      <form className="card p-4 shadow" onSubmit={handleVerifyOTP}>
-        <h3>Verify Your Email</h3>
+      <form className="card p-4 shadow auth-card" onSubmit={handleVerifyOTP}>
+        <div className="auth-card-header">
+          <span className="auth-card-badge">Verify</span>
+          <h3>Verify Your Email</h3>
+          <p>Enter the 6-digit code from your inbox to unlock access.</p>
+        </div>
         {error && <div className="alert alert-danger">{error}</div>}
         {message && <div className="alert alert-success">{message}</div>}
 
@@ -115,8 +125,12 @@ export default function SignupForm() {
   }
 
   return (
-    <form className="card p-4 shadow" onSubmit={handleSendOTP}>
-      <h3>Signup</h3>
+    <form className="card p-4 shadow auth-card" onSubmit={handleSendOTP}>
+      <div className="auth-card-header">
+        <span className="auth-card-badge">Create Account</span>
+        <h3>Signup</h3>
+        <p>Register once and access stunning learning tools with premium design.</p>
+      </div>
       {error && <div className="alert alert-danger">{error}</div>}
       {message && <div className="alert alert-success">{message}</div>}
 
@@ -195,6 +209,25 @@ export default function SignupForm() {
       <button className="btn btn-primary mt-3 w-100" disabled={loading}>
         {loading ? "Sending OTP..." : "Send OTP"}
       </button>
+      <button 
+        className="btn btn-link mt-2 w-100 auth-action-muted" 
+        type="button" 
+        onClick={openChatBot}
+      >
+        Need help?
+      </button>
+      <div className="text-center mt-3">
+        <p className="text-muted small">
+          Already have an account?{' '}
+          <button
+            type="button"
+            className="btn btn-link btn-sm text-decoration-none auth-action-muted p-0"
+            onClick={() => navigate('/login')}
+          >
+            Login
+          </button>
+        </p>
+      </div>
     </form>
   );
 }

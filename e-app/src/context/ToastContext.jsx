@@ -10,12 +10,23 @@ const ICONS = {
   warning: "bi-exclamation-triangle-fill",
   info: "bi-info-circle-fill",
 };
-
-const COLORS = {
-  success: "text-bg-success",
-  error: "text-bg-danger",
-  warning: "text-bg-warning",
-  info: "text-bg-info",
+const TOAST_STYLES = {
+  success: {
+    background: "linear-gradient(135deg, #198754, #20c997)",
+    color: "#fff",
+  },
+  error: {
+    background: "linear-gradient(135deg, #dc3545, #d63384)",
+    color: "#fff",
+  },
+  warning: {
+    background: "linear-gradient(135deg, #ffc107, #fd7e14)",
+    color: "#212529",
+  },
+  info: {
+    background: "linear-gradient(135deg, #0dcaf0, #0d6efd)",
+    color: "#fff",
+  },
 };
 
 export function ToastProvider({ children }) {
@@ -59,10 +70,17 @@ export function ToastProvider({ children }) {
         {toasts.map((t) => (
           <div
             key={t.id}
-            className={`toast show align-items-center border-0 shadow ${COLORS[t.type] || COLORS.info}`}
+            className="toast show align-items-center border-0 shadow"
             role="alert"
             aria-live="assertive"
             aria-atomic="true"
+            style={{
+              ...(TOAST_STYLES[t.type] || TOAST_STYLES.info),
+              minWidth: "320px",
+              marginBottom: "0.9rem",
+              borderRadius: "1rem",
+              boxShadow: "0 18px 40px rgba(15, 23, 42, 0.18)",
+            }}
           >
             <div className="d-flex">
               <div className="toast-body d-flex align-items-center">

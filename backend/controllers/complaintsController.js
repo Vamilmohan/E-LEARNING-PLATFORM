@@ -35,7 +35,7 @@ exports.createComplaint = async (req, res) => {
 exports.updateComplaintStatus = async (req, res) => {
   try {
     const { id } = req.params;
-    const { status } = req.body;
+    const { status, adminMessage } = req.body;
     if (!['pending', 'solved'].includes(status)) {
       return res.status(400).json({ message: 'Invalid status' });
     }
@@ -44,6 +44,9 @@ exports.updateComplaintStatus = async (req, res) => {
       return res.status(404).json({ message: 'Complaint not found' });
     }
     complaint.status = status;
+    if (typeof adminMessage === 'string') {
+      complaint.adminMessage = adminMessage;
+    }
     await complaint.save();
     res.json(complaint);
   } catch (error) {

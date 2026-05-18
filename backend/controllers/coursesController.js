@@ -30,7 +30,7 @@ exports.getMyCourses = async (req, res) => {
 
 exports.createCourse = async (req, res) => {
   try {
-    const { title, description, thumbnail, duration, content, isMandatory } = req.body;
+    const { title, description, thumbnail, duration, content, isMandatory, materials } = req.body;
     const user = req.user;
     if (!['instructor', 'admin'].includes(user.role)) {
       return res.status(403).json({ message: 'Forbidden: only instructors can create courses' });
@@ -42,6 +42,7 @@ exports.createCourse = async (req, res) => {
       thumbnail,
       duration,
       content,
+      materials,
       isMandatory: Boolean(isMandatory),
       instructorId: user.id,
       instructorName: user.name,

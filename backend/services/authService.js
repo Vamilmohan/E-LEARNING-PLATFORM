@@ -1,7 +1,7 @@
 const jwt = require('jsonwebtoken');
 const config = require('../config/dbConfig');
 const { findUserByEmail, createUser, saveUser } = require('./userService');
-const { sendOtpEmail } = require('./emailService');
+const { sendOtpEmail, sendForgotPasswordOtpEmail } = require('./emailService');
 
 const generateToken = (userId) => {
   return jwt.sign({ user: { id: userId } }, config.jwtSecret, {
@@ -127,8 +127,81 @@ const loginUser = async ({ email, password }) => {
   };
 };
 
+const sendForgotPasswordOtp = async ({ email }) => {
+  const user = await findUserByEmail(email);
+  if (!user) {
+    const error = new Error('User not found');
+    error.status = 400;
+    throw error;
+  }
+
+  const otp = generateOtp();
+  const otpExpires = Date.now() + 10 * 60 * 1000;
+
+  user.forgotPasswordOtp = otp;
+  user.forgotPasswordOtpExpires = otpExpires;
+  await saveUser(user);
+
+  await sendForgotPasswordOtpEmail({ to: email, otp });
+  return { message: 'OTP sent to your email for password reset' };
+};
+
+const verifyForgotPasswordOtp = async ({ email, otp }) => {
+  const user = await findUserByEmail(email);
+  if (!user) {
+    const error = new Error('User not found');
+    error.status = 400;
+    throw error;
+  }
+
+  if (!user.forgotPasswordOtp || user.forgotPasswordOtp !== otp) {
+    const error = new Error('Invalid OTP');
+    error.status = 400;
+    throw error;
+  }
+
+  if (Date.now() > user.forgotPasswordOtpExpires) {
+    const error = new Error('OTP expired');
+    error.status = 400;
+    throw error;
+  }
+
+  return { message: 'OTP verified successfully' };
+};
+
+const resetPassword = async ({ email, otp, newPassword }) => {
+  const user = await findUserByEmail(email);
+  if (!user) {
+    const error = new Error('User not found');
+    error.status = 400;
+    throw error;
+  }
+
+  if (!user.forgotPasswordOtp || user.forgotPasswordOtp !== otp) {
+    const error = new Error('Invalid OTP');
+    error.status = 400;
+    throw error;
+  }
+
+  if (Date.now() > user.forgotPasswordOtpExpires) {
+    const error = new Error('OTP expired');
+    error.status = 400;
+    throw error;
+  }
+
+  user.password = newPassword;
+  user.forgotPasswordOtp = undefined;
+  user.forgotPasswordOtpExpires = undefined;
+  await saveUser(user);
+
+  return { message: 'Password reset successfully' };
+};
+
 module.exports = {
   sendSignupOtp,
   verifySignupOtp,
   loginUser,
+  sendForgotPasswordOtp,
+  verifyForgotPasswordOtp,
+  resetPassword,
 };

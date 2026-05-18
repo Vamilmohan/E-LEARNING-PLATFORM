@@ -20,8 +20,10 @@ export default function Login() {
   return (
     <>
       <Navbar />
-      <div className="container mt-5" style={{ maxWidth: "500px" }}>
-        <LoginForm />
+      <div className="auth-page py-5">
+        <div className="container auth-container">
+          <LoginForm />
+        </div>
       </div>
     </>
   );

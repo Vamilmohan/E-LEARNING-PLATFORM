@@ -16,6 +16,45 @@ exports.sendOTP = async (req, res) => {
   }
 };
 
+// @desc    Send OTP for forgot password
+// @route   POST /api/auth/send-forgot-otp
+// @access  Public
+exports.sendForgotPasswordOtp = async (req, res) => {
+  try {
+    const result = await authService.sendForgotPasswordOtp(req.body);
+    res.json(result);
+  } catch (error) {
+    console.error('sendForgotPasswordOtp error:', error);
+    res.status(error.status || 500).json({ message: error.message || 'Server error' });
+  }
+};
+
+// @desc    Verify OTP for forgot password
+// @route   POST /api/auth/verify-forgot-otp
+// @access  Public
+exports.verifyForgotPasswordOtp = async (req, res) => {
+  try {
+    const result = await authService.verifyForgotPasswordOtp(req.body);
+    res.json(result);
+  } catch (error) {
+    console.error('verifyForgotPasswordOtp error:', error);
+    res.status(error.status || 500).json({ message: error.message || 'Server error' });
+  }
+};
+
+// @desc    Reset password with OTP
+// @route   POST /api/auth/reset-password
+// @access  Public
+exports.resetPassword = async (req, res) => {
+  try {
+    const result = await authService.resetPassword(req.body);
+    res.json(result);
+  } catch (error) {
+    console.error('resetPassword error:', error);
+    res.status(error.status || 500).json({ message: error.message || 'Server error' });
+  }
+};
+
 // @desc    Logout user
 // @route   POST /api/auth/logout
 // @access  Public
@@ -83,3 +122,5 @@ exports.getMe = async (req, res) => {
     res.status(500).json({ message: 'Server error' });
   }
 };
+
+module.exports = exports;

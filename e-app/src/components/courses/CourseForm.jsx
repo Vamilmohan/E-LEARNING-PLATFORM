@@ -16,7 +16,8 @@ export default function CourseForm({ onSubmit, onCancel }) {
     thumbnail: "",
     duration: "", // Will store as "12 weeks 20 days 10 hours"
     durationBreakdown: { weeks: 0, days: 0, hours: 0 }, // For easier parsing
-    content: [{ topic: "", type: "url", videoUrl: "", topicDesc: "" }],
+    content: [{ topic: "", type: "url", videoUrl: "", videoFile: "", topicDesc: "" }],
+    materials: [{ type: "text", value: "" }],
   });
 
   // Update course data whenever duration parts change
@@ -53,14 +54,14 @@ export default function CourseForm({ onSubmit, onCancel }) {
     setCourseData({ ...courseData, content: updatedContent });
   };
 
-  const handleFileUpload = (e, index = null) => {
+  const handleFileUpload = (e, index = null, field = "thumbnail") => {
     const file = e.target.files[0];
     const reader = new FileReader();
     reader.onloadend = () => {
       if (index !== null) {
-        handleTopicChange(index, "link", reader.result);
+        handleTopicChange(index, field, reader.result);
       } else {
-        setCourseData({ ...courseData, thumbnail: reader.result });
+        setCourseData({ ...courseData, [field]: reader.result });
       }
     };
     if (file) reader.readAsDataURL(file);
@@ -223,7 +224,6 @@ export default function CourseForm({ onSubmit, onCancel }) {
               >
                 <option value="url">YouTube URL</option>
                 <option value="video">Local Video File</option>
-                <option value="doc">Document (PDF/Doc)</option>
               </select>
             </div>
           </div>
@@ -243,7 +243,8 @@ export default function CourseForm({ onSubmit, onCancel }) {
               <input
                 type="file"
                 className="form-control form-control-sm"
-                onChange={(e) => handleFileUpload(e, index)}
+                    accept="video/*"
+                    onChange={(e) => handleFileUpload(e, index, "videoFile")}
                 required
               />
             )}
@@ -258,6 +259,73 @@ export default function CourseForm({ onSubmit, onCancel }) {
           />
         </div>
       ))}
+
+      <h6 className="fw-bold mt-4">Course Materials</h6>
+      {courseData.materials.map((item, index) => (
+        <div key={index} className="border rounded p-3 mb-3 bg-white shadow-sm">
+          <div className="row g-2 mb-2">
+            <div className="col-md-6">
+              <select
+                className="form-select"
+                value={item.type}
+                onChange={(e) => {
+                  const updatedMaterials = [...courseData.materials];
+                  updatedMaterials[index].type = e.target.value;
+                  setCourseData({ ...courseData, materials: updatedMaterials });
+                }}
+              >
+                <option value="text">Text Material</option>
+                <option value="pdf">PDF / Document</option>
+              </select>
+            </div>
+            <div className="col-md-6">
+              {item.type === "text" ? (
+                <textarea
+                  className="form-control form-control-sm"
+                  rows="3"
+                  placeholder="Enter material text..."
+                  value={item.value}
+                  onChange={(e) => {
+                    const updatedMaterials = [...courseData.materials];
+                    updatedMaterials[index].value = e.target.value;
+                    setCourseData({ ...courseData, materials: updatedMaterials });
+                  }}
+                />
+              ) : (
+                <input
+                  type="file"
+                  className="form-control form-control-sm"
+                  accept=".pdf,.doc,.docx,.txt"
+                  onChange={(e) => {
+                    const file = e.target.files[0];
+                    const reader = new FileReader();
+                    reader.onloadend = () => {
+                      const updatedMaterials = [...courseData.materials];
+                      updatedMaterials[index].value = reader.result;
+                      updatedMaterials[index].name = file?.name || updatedMaterials[index].name;
+                      setCourseData({ ...courseData, materials: updatedMaterials });
+                    };
+                    if (file) reader.readAsDataURL(file);
+                  }}
+                />
+              )}
+            </div>
+          </div>
+        </div>
+      ))}
+
+      <button
+        type="button"
+        className="btn btn-outline-secondary btn-sm mb-4"
+        onClick={() =>
+          setCourseData({
+            ...courseData,
+            materials: [...courseData.materials, { type: "text", value: "" }],
+          })
+        }
+      >
+        + Add Material
+      </button>
 
       <button
         type="button"

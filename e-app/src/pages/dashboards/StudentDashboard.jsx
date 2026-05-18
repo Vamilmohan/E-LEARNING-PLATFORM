@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useLocation } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { useToast } from "../../context/ToastContext";
 import Navbar from "../../components/layout/Navbar";
@@ -6,14 +7,17 @@ import Profile from "../Profile";
 import CourseList from "../../components/courses/CourseList";
 import CoursePlayer from "../../components/courses/CoursePlayer";
 import QuizTaker from "../../components/quizzes/QuizTaker";
+import StudentOwnPerformanceDashboard from "../../components/StudentOwnPerformanceDashboard";
 
 // Student Dashboard - shows courses, progress, quizzes and ratings
 export default function StudentDashboard() {
   // Get current user and logout function from auth context
   const { user, logout } = useAuth();
   const toast = useToast();
+  const location = useLocation();
   // Track which tab is currently active (dashboard, courses, quizzes, etc)
   const [activeTab, setActiveTab] = useState("dashboard");
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
   // Store which course student is currently viewing
   const [selectedCourse, setSelectedCourse] = useState(null);
 
@@ -73,6 +77,14 @@ export default function StudentDashboard() {
     };
     fetchData();
   }, []);
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const tab = params.get("tab");
+    if (tab) {
+      setActiveTab(tab);
+    }
+  }, [location.search]);
 
   // No localStorage sync for student dashboard data
 
@@ -283,7 +295,7 @@ export default function StudentDashboard() {
   };
 
   return (
-    <div className="d-flex flex-column min-vh-100 bg-light">
+    <div className="d-flex flex-column min-vh-100 dashboard-shell">
       <Navbar />
 
       <div
@@ -291,14 +303,19 @@ export default function StudentDashboard() {
         style={{ minHeight: "calc(100vh - 56px)" }}
       >
         <div
-          className="bg-white shadow-sm p-3"
-          style={{ width: "250px", minHeight: "100%" }}
+          className={`dashboard-sidebar app-sidebar bg-white shadow-sm p-3 ${isMenuOpen ? "d-block position-fixed top-0 start-0 vh-100" : "d-none d-lg-block"}`}
+          style={{
+            width: isMenuOpen ? "85%" : "250px",
+            maxWidth: isMenuOpen ? "320px" : "250px",
+            minHeight: "100%",
+            zIndex: isMenuOpen ? 1052 : "auto",
+          }}
         >
           <h5 className="text-primary mb-4">Student Menu</h5>
           <ul className="nav flex-column">
             <li className="nav-item mb-2">
               <button
-                className={`nav-link btn btn-link text-start ${activeTab === "dashboard" ? "text-primary fw-bold" : "text-dark"}`}
+                className={`nav-link btn btn-link text-start w-100 ${activeTab === "dashboard" ? "text-primary fw-bold" : "text-dark"}`}
                 onClick={() => setActiveTab("dashboard")}
               >
                 <i className="bi bi-house-door me-2"></i>Dashboard
@@ -306,7 +323,7 @@ export default function StudentDashboard() {
             </li>
             <li className="nav-item mb-2">
               <button
-                className={`nav-link btn btn-link text-start ${activeTab === "Enrolled Courses" ? "text-primary fw-bold" : "text-dark"}`}
+                className={`nav-link btn btn-link text-start w-100 ${activeTab === "Enrolled Courses" ? "text-primary fw-bold" : "text-dark"}`}
                 onClick={() => setActiveTab("Enrolled Courses")}
               >
                 <i className="bi bi-collection me-2"></i>Enrolled Courses
@@ -314,7 +331,7 @@ export default function StudentDashboard() {
             </li>
             <li className="nav-item mb-2">
               <button
-                className={`nav-link btn btn-link text-start ${activeTab === "Completed Courses" ? "text-primary fw-bold" : "text-dark"}`}
+                className={`nav-link btn btn-link text-start w-100 ${activeTab === "Completed Courses" ? "text-primary fw-bold" : "text-dark"}`}
                 onClick={() => setActiveTab("Completed Courses")}
               >
                 <i className="bi bi-check-square-fill me-2"></i>Completed
@@ -323,7 +340,7 @@ export default function StudentDashboard() {
             </li>
             <li className="nav-item mb-2">
               <button
-                className={`nav-link btn btn-link text-start ${activeTab === "browse" ? "text-primary fw-bold" : "text-dark"}`}
+                className={`nav-link btn btn-link text-start w-100 ${activeTab === "browse" ? "text-primary fw-bold" : "text-dark"}`}
                 onClick={() => setActiveTab("browse")}
               >
                 <i className="bi bi-search me-2"></i>Browse Courses
@@ -331,7 +348,7 @@ export default function StudentDashboard() {
             </li>
             <li className="nav-item mb-2">
               <button
-                className={`nav-link btn btn-link text-start ${activeTab === "quizzes" ? "text-primary fw-bold" : "text-dark"}`}
+                className={`nav-link btn btn-link text-start w-100 ${activeTab === "quizzes" ? "text-primary fw-bold" : "text-dark"}`}
                 onClick={() => setActiveTab("quizzes")}
               >
                 <i className="bi bi-question-circle me-2"></i>Available Quizzes
@@ -339,7 +356,7 @@ export default function StudentDashboard() {
             </li>
             <li className="nav-item mb-2">
               <button
-                className={`nav-link btn btn-link text-start ${activeTab === "completed-quizzes" ? "text-primary fw-bold" : "text-dark"}`}
+                className={`nav-link btn btn-link text-start w-100 ${activeTab === "completed-quizzes" ? "text-primary fw-bold" : "text-dark"}`}
                 onClick={() => setActiveTab("completed-quizzes")}
               >
                 <i className="bi bi-check-circle me-2"></i>Completed Quizzes
@@ -347,7 +364,7 @@ export default function StudentDashboard() {
             </li>
             <li className="nav-item mb-2">
               <button
-                className={`nav-link btn btn-link text-start ${activeTab === "performance" ? "text-primary fw-bold" : "text-dark"}`}
+                className={`nav-link btn btn-link text-start w-100 ${activeTab === "performance" ? "text-primary fw-bold" : "text-dark"}`}
                 onClick={() => setActiveTab("performance")}
               >
                 <i className="bi bi-graph-up me-2"></i>Performance
@@ -355,7 +372,7 @@ export default function StudentDashboard() {
             </li>
             <li className="nav-item mb-2">
               <button
-                className={`nav-link btn btn-link text-start ${activeTab === "profile" ? "text-primary fw-bold" : "text-dark"}`}
+                className={`nav-link btn btn-link text-start w-100 ${activeTab === "profile" ? "text-primary fw-bold" : "text-dark"}`}
                 onClick={() => setActiveTab("profile")}
               >
                 <i className="bi bi-person me-2"></i>Profile
@@ -363,7 +380,7 @@ export default function StudentDashboard() {
             </li>
             <li className="nav-item mb-2">
               <button
-                className={`nav-link btn btn-link text-start ${activeTab === "complaints" ? "text-primary fw-bold" : "text-dark"}`}
+                className={`nav-link btn btn-link text-start w-100 ${activeTab === "complaints" ? "text-primary fw-bold" : "text-dark"}`}
                 onClick={() => setActiveTab("complaints")}
               >
                 <i className="bi bi-exclamation-triangle me-2"></i>Complaints
@@ -372,7 +389,26 @@ export default function StudentDashboard() {
           </ul>
         </div>
 
+        {isMenuOpen && (
+          <div
+            className="d-lg-none"
+            style={{
+              position: "fixed",
+              inset: 0,
+              backgroundColor: "rgba(0,0,0,0.4)",
+              zIndex: 1050,
+            }}
+            onClick={() => setIsMenuOpen(false)}
+          ></div>
+        )}
+
         <div className="flex-grow-1 p-4">
+          <button
+            className="btn btn-outline-primary d-lg-none mb-3"
+            onClick={() => setIsMenuOpen(true)}
+          >
+            <i className="bi bi-list me-2"></i>Menu
+          </button>
           {activeTab === "dashboard" && (
             <div>
               <div
@@ -867,8 +903,6 @@ export default function StudentDashboard() {
               </div>
             </div>
           )}
-
-<<<<<<< HEAD
           {activeTab === "performance" && (
             <StudentOwnPerformanceDashboard
               user={user}
@@ -879,9 +913,6 @@ export default function StudentDashboard() {
               courseRatings={courseRatings}
             />
           )}
-
-=======
->>>>>>> fork/main
           {takingQuiz && (
             <QuizTaker
               quiz={takingQuiz}
@@ -903,6 +934,41 @@ export default function StudentDashboard() {
                 <div className="card-body">
                   <ComplaintForm onSubmit={fileComplaint} />
                 </div>
+              </div>
+              <div className="mt-4">
+                <h4 className="mb-3">Your Submitted Complaints</h4>
+                {complaints.length === 0 ? (
+                  <div className="alert alert-info">No complaints filed yet. Your submitted complaints will appear here.</div>
+                ) : (
+                  <div className="row g-3">
+                    {complaints.map((c) => (
+                      <div key={c.id || c._id} className="col-12">
+                        <div className="card shadow-sm border-start border-4 rounded-3">
+                          <div className="card-body d-flex flex-column flex-md-row justify-content-between gap-3 align-items-start">
+                            <div>
+                              <p className="mb-2 fw-bold">{c.complaint}</p>
+                              {c.createdAt && (
+                                <small className="text-muted">Submitted: {new Date(c.createdAt).toLocaleString()}</small>
+                              )}
+                              {c.adminMessage && (
+                                <div className="alert alert-light border-start border-4 border-info mt-3">
+                                  <strong>Admin guidance:</strong>
+                                  <p className="mb-0 mt-1">{c.adminMessage}</p>
+                                </div>
+                              )}
+                            </div>
+                            <div className="text-end">
+                              <span className={`badge ${c.status === "solved" ? "bg-success" : "bg-warning text-dark"}`}>
+                                {c.status === "solved" ? "Solved" : "Pending"}
+                              </span>
+                              {c.status === "solved" && <div className="text-success small mt-1">Resolution visible to student.</div>}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           )}

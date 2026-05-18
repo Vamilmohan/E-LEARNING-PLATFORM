@@ -250,6 +250,78 @@ export function AuthProvider({ children }) {
     return null;
   };
 
+  const sendForgotPasswordOtp = async (data) => {
+    dispatch({ type: "SET_LOADING", payload: true });
+    try {
+      const response = await fetch(`${API_BASE}/auth/send-forgot-otp`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify(data),
+      });
+      const result = await response.json();
+      if (response.ok) {
+        dispatch({ type: "SET_MESSAGE", payload: result.message });
+        return true;
+      }
+      dispatch({ type: "SET_ERROR", payload: result.message });
+      return false;
+    } catch (error) {
+      dispatch({ type: "SET_ERROR", payload: "Network error" });
+      return false;
+    } finally {
+      dispatch({ type: "SET_LOADING", payload: false });
+    }
+  };
+
+  const verifyForgotPasswordOtp = async (data) => {
+    dispatch({ type: "SET_LOADING", payload: true });
+    try {
+      const response = await fetch(`${API_BASE}/auth/verify-forgot-otp`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify(data),
+      });
+      const result = await response.json();
+      if (response.ok) {
+        dispatch({ type: "SET_MESSAGE", payload: result.message });
+        return true;
+      }
+      dispatch({ type: "SET_ERROR", payload: result.message });
+      return false;
+    } catch (error) {
+      dispatch({ type: "SET_ERROR", payload: "Network error" });
+      return false;
+    } finally {
+      dispatch({ type: "SET_LOADING", payload: false });
+    }
+  };
+
+  const resetPassword = async (data) => {
+    dispatch({ type: "SET_LOADING", payload: true });
+    try {
+      const response = await fetch(`${API_BASE}/auth/reset-password`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify(data),
+      });
+      const result = await response.json();
+      if (response.ok) {
+        dispatch({ type: "SET_MESSAGE", payload: result.message });
+        return true;
+      }
+      dispatch({ type: "SET_ERROR", payload: result.message });
+      return false;
+    } catch (error) {
+      dispatch({ type: "SET_ERROR", payload: "Network error" });
+      return false;
+    } finally {
+      dispatch({ type: "SET_LOADING", payload: false });
+    }
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -260,6 +332,9 @@ export function AuthProvider({ children }) {
         logout,
         updateUserProfile,
         refreshUserProfile,
+        sendForgotPasswordOtp,
+        verifyForgotPasswordOtp,
+        resetPassword,
         users: state.users,
         updateUser,
         removeUser,

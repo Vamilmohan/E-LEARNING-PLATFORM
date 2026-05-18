@@ -58,8 +58,6 @@ const InstructorAnalytics = ({
 
   // Calculate total unique students enrolled
   const totalStudents = new Set(myEnrollments.map((e) => e.userId)).size;
-  // Calculate total revenue (assume $50 per enrollment)
-  const totalRevenue = myEnrollments.length * 50;
   const averageRating = avgInstructorRating;
   const avgCourseRating = averageRating; // alias for display without throwing reference error
   const completionRate =
@@ -83,26 +81,6 @@ const InstructorAnalytics = ({
     return {
       date: date.toLocaleDateString(),
       enrollments: dayEnrollments,
-    };
-  });
-
-  // Monthly Revenue Data (last 12 months)
-  const monthlyRevenue = Array.from({ length: 12 }, (_, i) => {
-    const date = new Date();
-    date.setMonth(date.getMonth() - (11 - i));
-    const monthEnrollments = myEnrollments.filter((e) => {
-      const enrollDate = new Date(e.enrolledAt || Date.now());
-      return (
-        enrollDate.getMonth() === date.getMonth() &&
-        enrollDate.getFullYear() === date.getFullYear()
-      );
-    }).length;
-    return {
-      month: date.toLocaleString("default", {
-        month: "short",
-        year: "numeric",
-      }),
-      revenue: monthEnrollments * 50,
     };
   });
 
@@ -138,15 +116,6 @@ const InstructorAnalytics = ({
     return 120;
   };
 
-  // Format minutes to hours and minutes
-  const formatWatchTime = (minutes) => {
-    const hours = Math.floor(minutes / 60);
-    const mins = minutes % 60;
-    if (hours === 0) return `${mins} mins`;
-    if (mins === 0) return `${hours} hrs`;
-    return `${hours} hrs ${mins} mins`;
-  };
-
   const courseEngagement = myCourses.map((course) => {
     const courseEnrollments = myEnrollments.filter(
       (e) => e.courseId === course.id,
@@ -154,16 +123,12 @@ const InstructorAnalytics = ({
     const progressPercent = courseProgress[course.id]?.progress || 0;
     const completed = progressPercent >= 100 ? courseEnrollments.length : 0;
     const durationMinutes = getDurationMinutes(course.duration);
-    const avgWatchTimeMinutes = Math.round(
-      (progressPercent / 100) * durationMinutes,
-    );
-    const avgWatchTime = formatWatchTime(avgWatchTimeMinutes);
     return {
       course: course.title,
       enrolled: courseEnrollments.length,
       completed,
       completionRate: progressPercent,
-      avgWatchTime,
+      // avgWatchTime removed from UI to match requirements
     };
   });
 
@@ -283,15 +248,6 @@ const InstructorAnalytics = ({
         <div className="col-md-3 mb-3">
           <div className="card shadow border-0 h-100">
             <div className="card-body text-center">
-              <i className="bi bi-cash display-4 text-success mb-2"></i>
-              <h5 className="card-title">Total Revenue</h5>
-              <h3 className="text-success">${totalRevenue}</h3>
-            </div>
-          </div>
-        </div>
-        <div className="col-md-3 mb-3">
-          <div className="card shadow border-0 h-100">
-            <div className="card-body text-center">
               <i className="bi bi-star-fill display-4 text-warning mb-2"></i>
               <h5 className="card-title">Average Rating</h5>
               <h3 className="text-warning">{averageRating}/5</h3>
@@ -351,28 +307,7 @@ const InstructorAnalytics = ({
       </div>
 
       <div className="row mb-4">
-        {/* Revenue Analytics */}
-        <div className="col-md-6 mb-4">
-          <div className="card shadow border-0 h-100">
-            <div className="card-header bg-success text-white">
-              <h5 className="mb-0">Monthly Revenue</h5>
-            </div>
-            <div className="card-body">
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={monthlyRevenue}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="month" />
-                  <YAxis />
-                  <Tooltip />
-                  <Bar dataKey="revenue" fill="#28a745" />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-        </div>
-
-        {/* Course Engagement */}
-        <div className="col-md-6 mb-4">
+        <div className="col-md-12 mb-4">
           <div className="card shadow border-0 h-100">
             <div className="card-header bg-info text-white">
               <h5 className="mb-0">Course Engagement</h5>
@@ -386,7 +321,6 @@ const InstructorAnalytics = ({
                       <th>Enrolled</th>
                       <th>Completed</th>
                       <th>Completion Rate</th>
-                      <th>Avg Watch Time</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -396,7 +330,6 @@ const InstructorAnalytics = ({
                         <td>{course.enrolled}</td>
                         <td>{course.completed}</td>
                         <td>{course.completionRate}%</td>
-                        <td>{course.avgWatchTime}</td>
                       </tr>
                     ))}
                   </tbody>

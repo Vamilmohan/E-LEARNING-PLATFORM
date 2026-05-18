@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useLocation } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { useToast } from "../../context/ToastContext";
 import Navbar from "../../components/layout/Navbar";
@@ -10,19 +11,24 @@ import CoursePlayer from "../../components/courses/CoursePlayer";
 import QuizManagement from "../../components/quizzes/QuizManagement";
 import ErrorBoundary from "../../components/ErrorBoundary";
 import InstructorAnalytics from "../../components/InstructorAnalytics";
+import StudentPerformanceDashboard from "../../components/StudentPerformanceDashboard";
 
 // Instructor Dashboard - manage courses, quizzes, student performance
 export default function InstructorDashboard() {
   // Get current user, logout and all users from auth context
   const { user, logout, users } = useAuth();
   const toast = useToast();
+  const location = useLocation();
   // Track which tab is currently active
   const [activeTab, setActiveTab] = useState("dashboard");
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
   // Search box to find students by name
   const [studentSearch, setStudentSearch] = useState("");
   // Store selected student's performance data
   const [selectedStudentAnalytics, setSelectedStudentAnalytics] =
     useState(null);
+  const [hoveredCard, setHoveredCard] = useState(null);
+  
 
   const [courses, setCourses] = useState([]);
   const [allCourses, setAllCourses] = useState([]);
@@ -30,21 +36,11 @@ export default function InstructorDashboard() {
   const [quizzes, setQuizzes] = useState([]);
   const [complaints, setComplaints] = useState([]);
   const [selectedCourse, setSelectedCourse] = useState(null);
-<<<<<<< HEAD
   const [quizAttempts, setQuizAttempts] = useState([]);
   const [courseProgress, setCourseProgress] = useState({});
   const [courseRatings, setCourseRatings] = useState({});
 
   const API_BASE = "http://localhost:5000/api";
-=======
-  const [quizAttempts, setQuizAttempts] = useState(() => JSON.parse(localStorage.getItem("APP_QUIZ_ATTEMPTS") || "[]"));
-
-  useEffect(() => { localStorage.setItem("APP_COURSES", JSON.stringify(courses)); }, [courses]);
-  useEffect(() => { localStorage.setItem("APP_ENROLLMENTS", JSON.stringify(enrollments)); }, [enrollments]);
-  useEffect(() => { localStorage.setItem("APP_QUIZZES", JSON.stringify(quizzes)); }, [quizzes]);
-  useEffect(() => { localStorage.setItem("APP_COMPLAINTS", JSON.stringify(complaints)); }, [complaints]);
-  useEffect(() => { localStorage.setItem("APP_QUIZ_ATTEMPTS", JSON.stringify(quizAttempts)); }, [quizAttempts]);
->>>>>>> fork/main
 
   useEffect(() => {
     const fetchData = async () => {
@@ -83,6 +79,14 @@ export default function InstructorDashboard() {
     };
     fetchData();
   }, []);
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const tab = params.get("tab");
+    if (tab) {
+      setActiveTab(tab);
+    }
+  }, [location.search]);
 
   // No persistent browser storage for instructor data
 
@@ -226,9 +230,10 @@ export default function InstructorDashboard() {
   const totalCourses = myCourses.length;
   const totalEnrollments = myEnrollments.length;
   const totalQuizzes = myQuizzes.length;
+  const activeStudents = new Set(myEnrollments.map((e) => e.userId)).size;
 
   return (
-    <div className="d-flex flex-column min-vh-100 bg-light">
+    <div className="d-flex flex-column min-vh-100 dashboard-shell">
       <Navbar />
 
       <div
@@ -236,8 +241,13 @@ export default function InstructorDashboard() {
         style={{ minHeight: "calc(100vh - 56px)" }}
       >
         <div
-          className="bg-white shadow-sm p-3"
-          style={{ width: "250px", minHeight: "100%" }}
+          className={`dashboard-sidebar app-sidebar bg-white shadow-sm p-3 ${isMenuOpen ? "d-block position-fixed top-0 start-0 vh-100" : "d-none d-lg-block"}`}
+          style={{
+            width: isMenuOpen ? "85%" : "250px",
+            maxWidth: isMenuOpen ? "320px" : "250px",
+            minHeight: "100%",
+            zIndex: isMenuOpen ? 1052 : "auto",
+          }}
         >
           <h5 className="text-primary mb-4">Instructor Menu</h5>
           <ul className="nav flex-column">
@@ -300,57 +310,140 @@ export default function InstructorDashboard() {
             <li className="nav-item mb-2">
               <button
                 className={`nav-link btn btn-link text-start w-100 ${activeTab === "profile" ? "text-primary fw-bold" : "text-dark"}`}
-                onClick={() => setActiveTab("profile")}
+                onClick={() => {
+                  setActiveTab("profile");
+                  setIsMenuOpen(false);
+                }}
               >
                 <i className="bi bi-person me-2"></i>Profile
               </button>
             </li>
           </ul>
         </div>
-
+        {isMenuOpen && (
+          <div
+            className="d-lg-none"
+            style={{
+              position: "fixed",
+              inset: 0,
+              backgroundColor: "rgba(0,0,0,0.4)",
+              zIndex: 1050,
+            }}
+            onClick={() => setIsMenuOpen(false)}
+          ></div>
+        )}
         <div className="flex-grow-1 p-4">
+          <button
+            className="btn btn-outline-primary d-lg-none mb-3"
+            onClick={() => setIsMenuOpen(true)}
+          >
+            <i className="bi bi-list me-2"></i>Menu
+          </button>
           {activeTab === "dashboard" && (
             <div>
               <div
-                className="text-white p-5 mb-4 rounded shadow"
-                style={{ backgroundColor: "#0DCAF0" }}
+                style={{ backgroundColor: "#0DCAF0", color: "white" }}
+                className="p-5 mb-4 rounded shadow"
               >
-                <h1 className="display-4 fw-bold">Instructor Dashboard</h1>
-                <p className="lead">
-                  Manage your professional courses and track student growth.
-                </p>
+                <h1 className="display-4">Welcome back, {user.name}!</h1>
+                <p className="lead">Continue your teaching journey.</p>
               </div>
-              <div className="row">
-                <div className="col-md-4 mb-4">
-                  <div className="card text-center shadow border-0 p-3">
+              <div className="row g-4">
+                <div className="col-md-3 mb-4" onMouseEnter={() => setHoveredCard("courses")} onMouseLeave={() => setHoveredCard(null)}>
+                  <div
+                    className="card text-center shadow border-0 p-3 cursor-pointer h-100"
+                    style={{
+                      minHeight: "240px",
+                      transform: hoveredCard === "courses" ? "scale(1.05)" : "scale(1)",
+                      transition: "all 0.3s ease",
+                    }}
+                    onClick={() => setActiveTab("courses")}
+                  >
                     <div className="card-body">
                       <i className="bi bi-book display-4 text-primary"></i>
                       <h5 className="card-title mt-2">My Courses</h5>
-                      <p className="card-text display-4 fw-bold">
-                        {totalCourses}
-                      </p>
+                      <p className="card-text display-4 fw-bold">{totalCourses}</p>
+                      <small className="text-muted">Click to manage</small>
                     </div>
                   </div>
                 </div>
-                <div className="col-md-4 mb-4">
-                  <div className="card text-center shadow border-0 p-3">
+                <div className="col-md-3 mb-4" onMouseEnter={() => setHoveredCard("enrollments")} onMouseLeave={() => setHoveredCard(null)}>
+                  <div
+                    className="card text-center shadow border-0 p-3 cursor-pointer h-100"
+                    style={{
+                      minHeight: "240px",
+                      transform: hoveredCard === "enrollments" ? "scale(1.05)" : "scale(1)",
+                      transition: "all 0.3s ease",
+                    }}
+                    onClick={() => setActiveTab("students")}
+                  >
                     <div className="card-body">
                       <i className="bi bi-people display-4 text-success"></i>
                       <h5 className="card-title mt-2">Total Enrollments</h5>
-                      <p className="card-text display-4 fw-bold">
-                        {totalEnrollments}
-                      </p>
+                      <p className="card-text display-4 fw-bold">{totalEnrollments}</p>
+                      <small className="text-muted">View student progress</small>
                     </div>
                   </div>
                 </div>
-                <div className="col-md-4 mb-4">
-                  <div className="card text-center shadow border-0 p-3">
+                <div className="col-md-3 mb-4" onMouseEnter={() => setHoveredCard("quizzes")} onMouseLeave={() => setHoveredCard(null)}>
+                  <div
+                    className="card text-center shadow border-0 p-3 cursor-pointer h-100"
+                    style={{
+                      minHeight: "240px",
+                      transform: hoveredCard === "quizzes" ? "scale(1.05)" : "scale(1)",
+                      transition: "all 0.3s ease",
+                    }}
+                    onClick={() => setActiveTab("quizzes")}
+                  >
                     <div className="card-body">
                       <i className="bi bi-question-circle display-4 text-warning"></i>
                       <h5 className="card-title mt-2">My Quizzes</h5>
-                      <p className="card-text display-4 fw-bold">
-                        {totalQuizzes}
-                      </p>
+                      <p className="card-text display-4 fw-bold">{totalQuizzes}</p>
+                      <small className="text-muted">Manage assessments</small>
+                    </div>
+                  </div>
+                </div>
+                <div className="col-md-3 mb-4" onMouseEnter={() => setHoveredCard("studentsInsights")} onMouseLeave={() => setHoveredCard(null)}>
+                  <div
+                    className="card text-center shadow border-0 p-3 cursor-pointer h-100"
+                    style={{
+                      minHeight: "240px",
+                      transform: hoveredCard === "studentsInsights" ? "scale(1.05)" : "scale(1)",
+                      transition: "all 0.3s ease",
+                    }}
+                    onClick={() => setActiveTab("students")}
+                  >
+                    <div className="card-body">
+                      <i className="bi bi-people-fill display-4 text-secondary"></i>
+                      <h5 className="card-title mt-2">Active Students</h5>
+                      <p className="card-text display-4 fw-bold">{activeStudents}</p>
+                      <small className="text-muted">Track learner engagement</small>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="row mt-3">
+                <div className="col-md-4 mb-3">
+                  <div className="card text-center shadow-sm border-primary">
+                    <div className="card-body">
+                      <h6 className="card-title text-uppercase">Total Courses</h6>
+                      <p className="display-4 text-primary">{totalCourses}</p>
+                    </div>
+                  </div>
+                </div>
+                <div className="col-md-4 mb-3">
+                  <div className="card text-center shadow-sm border-success">
+                    <div className="card-body">
+                      <h6 className="card-title text-uppercase">Total Enrollments</h6>
+                      <p className="display-4 text-success">{totalEnrollments}</p>
+                    </div>
+                  </div>
+                </div>
+                <div className="col-md-4 mb-3">
+                  <div className="card text-center shadow-sm border-warning">
+                    <div className="card-body">
+                      <h6 className="card-title text-uppercase">Published Quizzes</h6>
+                      <p className="display-4 text-warning">{totalQuizzes}</p>
                     </div>
                   </div>
                 </div>
@@ -385,23 +478,43 @@ export default function InstructorDashboard() {
 
           {activeTab === "courses" && (
             <div>
-              <h2 className="mb-4 fw-bold">My Published Courses</h2>
+              <div className="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                  <h2 className="fw-bold mb-0">My Courses</h2>
+                  <p className="text-muted mb-0">All courses are shown below.</p>
+                </div>
+              </div>
               <div className="row g-4">
                 {myCourses.length > 0 ? (
-                  myCourses.map((course) => (
-                    <div key={course.id} className="col-md-6 col-lg-4">
-                      <CourseCard
-                        course={course}
-                        onView={(course) => {
-                          setSelectedCourse(course);
-                          setActiveTab("view-course");
-                        }}
-                        onDelete={deleteCourse}
-                      />
-                    </div>
-                  ))
+                  myCourses
+                    .map((course) => (
+                      <div
+                        key={course.id}
+                        className="col-md-6 col-lg-4"
+                        onMouseEnter={() => setHoveredCard(course.id)}
+                        onMouseLeave={() => setHoveredCard(null)}
+                      >
+                        <div
+                          style={{
+                            transform:
+                              hoveredCard === course.id ? "translateY(-8px)" : "translateY(0)",
+                            transition: "all 0.3s ease",
+                          }}
+                        >
+                          <CourseCard
+                            course={course}
+                            onView={(course) => {
+                              setSelectedCourse(course);
+                              setActiveTab("view-course");
+                            }}
+                            onDelete={deleteCourse}
+                          />
+                        </div>
+                      </div>
+                    ))
                 ) : (
-                  <div className="text-center py-5 bg-white rounded shadow-sm">
+                  <div className="text-center py-5 bg-white rounded shadow-sm col-12">
+                    <i className="bi bi-book display-4 text-muted mb-3"></i>
                     <p className="text-muted">
                       You haven't created any courses yet.
                     </p>
@@ -482,7 +595,6 @@ export default function InstructorDashboard() {
                               <tr key={student.id}>
                                 <td>{student.id}</td>
                                 <td>{student.name}</td>
-<<<<<<< HEAD
                                 <td>
                                   <button
                                     className="btn btn-sm btn-primary"
@@ -496,9 +608,6 @@ export default function InstructorDashboard() {
                                     View
                                   </button>
                                 </td>
-=======
-                                <td><button className="btn btn-sm btn-primary" onClick={() => setSelectedStudentAnalytics(student)}>View</button></td>
->>>>>>> fork/main
                               </tr>
                             ))}
                           </tbody>
@@ -511,13 +620,15 @@ export default function InstructorDashboard() {
                 );
               })}
               {selectedStudentAnalytics && (
-                <div className="p-3 bg-light rounded shadow-sm mt-4">
-                  <h5>Student Analytics (coming soon)</h5>
-                  <p><strong>Name:</strong> {selectedStudentAnalytics.name}</p>
-                  <p><strong>ID:</strong> {selectedStudentAnalytics.id}</p>
-                  <p>Student activity analytics will be released soon.</p>
-                  <button className="btn btn-secondary btn-sm" onClick={() => setSelectedStudentAnalytics(null)}>Close</button>
-                </div>
+                <StudentPerformanceDashboard
+                  student={selectedStudentAnalytics.student}
+                  course={selectedStudentAnalytics.course}
+                  enrollments={enrollments}
+                  courseProgress={courseProgress}
+                  quizAttempts={quizAttempts}
+                  quizzes={quizzes}
+                  onClose={() => setSelectedStudentAnalytics(null)}
+                />
               )}
             </div>
           )}

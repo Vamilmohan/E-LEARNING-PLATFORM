@@ -22,7 +22,8 @@ export default function CourseCard({
           <img
             src={course.thumbnail}
             alt={course.title}
-            className="card-img-top h-100 object-fit-cover"
+            className="card-img-top h-100"
+            style={{ width: "100%", height: "100%", objectFit: "cover" }}
           />
         ) : (
           <i className="bi bi-play-btn-fill display-1 text-secondary"></i>
